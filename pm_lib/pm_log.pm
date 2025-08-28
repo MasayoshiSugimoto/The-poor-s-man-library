@@ -1,9 +1,11 @@
 package pm_log;
+use strict;
+use warnings;
 
 
 sub debug {
   my ($text) = @_;
-  if ($pm_db_constants::LOG_DEBUG_ENABLED) {
+  if ($pm_constants::LOG_DEBUG_ENABLE) {
     print STDERR "DEBUG|$text\n";
   }
 }
