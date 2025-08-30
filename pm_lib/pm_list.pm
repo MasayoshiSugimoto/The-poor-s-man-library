@@ -42,6 +42,15 @@ sub filter {
 }
 
 
+sub each {
+  my ($self, $f) = @_;
+  my @result = ();
+  foreach my $x (@{$self->{data}}) {
+    $f->($x);
+  }
+}
+
+
 sub as_array {
   my ($self) = @_;
   return $self->{data};
