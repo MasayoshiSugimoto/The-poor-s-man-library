@@ -4,6 +4,7 @@ use warnings;
 
 
 sub new {
+  pm_log::debug("Creating db table object");
   my ($class, $database, $table_name, $data) = @_;
   my $self = {
     database => $database,
@@ -12,14 +13,17 @@ sub new {
     data => $data
   };
   bless $self, $class;
-  if (! defined $data) {
+  if (defined $data && ref($data) eq 'ARRAY') {
+    pm_log::debug("Array conversion");
+    $self->{data} = pm_list->new($data)
+  } elsif (!defined $data) {
     pm_log::debug("Data not provisioned. Loading data from disk.");
     my @l = ();
     my $directory = $self->path_get();
     foreach my $file (glob("$directory/*")) {
       push(@l, pm_db_util::load_ini_file($file));
     }
-    $self->{data} = \@l;
+    $self->{data} = pm_list->new(\@l);
   }
   pm_log::debug("Table created: $table_name");
   return $self;
@@ -37,21 +41,15 @@ sub drop {
 sub where {
   my ($self, $f_filter) = @_;
   pm_db_util::query_log("WHERE ...");
-  my @data = ();
-  foreach my $record (@{$self->{data}}) {
-    if ($f_filter->($record)) {
-      pm_log::debug("Pushing record: $record");
-      push(@data, $record);
-    }
-  }
-  return pm_db_table->new($self->{database}, $self->{table_name}, \@data);
+  my $data = $self->{data}->filter(sub {$f_filter->($_[0])});
+  return pm_db_table->new($self->{database}, $self->{table_name}, $data);
 }
 
 
 sub first {
   my ($self) = @_;
   pm_db_util::query_log("FIRST");
-  return $self->{data}[0];
+  return $self->{data}->get(0);
 }
 
 
@@ -73,7 +71,7 @@ sub insert {
     $id = $self->{database}->id_generate();
     $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} = $id;
   }
-  push(@{$self->{data}}, $record);
+  $self->{data}->push($record);
   pm_db_util::ini_write_file($self->record_path_get($id), $record);
 }
 
@@ -85,7 +83,7 @@ sub update {
   exists $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD}
     || die "Attempt to update a record which does not exist";
   my $id = $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD};
-  push(@{$self->{data}}, $record);
+  $self->{data}->push($record);
   pm_db_util::ini_write_file($self->record_path_get($id), $record);
 }
 
@@ -97,9 +95,8 @@ sub delete {
   exists $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD}
     || die "Attempt to delete a record which does not has a primary key";
   my $id = $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD};
-  $self->{data} = pm_list->new($self->{data})
-    ->filter(sub {$_[0]->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} != $id})
-    ->as_array();
+  $self->{data} = $self->{data}
+    ->filter(sub {$_[0]->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} != $id});
   pm_file::file_delete($self->record_path_get($id));
 }
 

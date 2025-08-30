@@ -48,5 +48,24 @@ sub as_array {
 }
 
 
+sub get {
+  my ($self, $index) = @_;
+  return $self->{data}[$index];
+}
+
+
+sub push {
+  my ($self, $value) = @_;
+  push(@{$self->{data}}, $value);
+  return $self;
+}
+
+
+sub size {
+  my ($self) = @_;
+  return scalar @{$self->{data}};
+}
+
+
 1;
 

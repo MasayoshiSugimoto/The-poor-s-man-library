@@ -24,9 +24,9 @@ for my $i (1..4) {
 my $result = $table1
   ->where(sub {$_[0]->{x} > 2})
   ->all();
-pm_test_util::assert_equals(2, scalar @$result, "No currect number of elements");
-pm_test_util::assert_equals(3, $result->[0]->{x}, "First element is not correct");
-pm_test_util::assert_equals(4, $result->[1]->{x}, "Second element is not correct");
+pm_test_util::assert_equals(2, $result->size(), "Incorrect number of elements");
+pm_test_util::assert_equals(3, $result->get(0)->{x}, "First element is not correct");
+pm_test_util::assert_equals(4, $result->get(1)->{x}, "Second element is not correct");
 $db->delete();
 pm_test_util::assert_false(-d $db_folder, "Failed to delete db");
 
