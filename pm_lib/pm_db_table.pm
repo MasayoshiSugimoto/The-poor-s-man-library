@@ -64,8 +64,8 @@ sub all {
 
 sub insert {
   my ($self, $record) = @_;
-  $self->assert_table_exist_on_disk();
   pm_db_util::query_log("INSERT INTO $self->{table_name}");
+  $self->assert_table_exist_on_disk();
   my $id;
   if (exists $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD}) {
     $id = $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD};
@@ -73,6 +73,19 @@ sub insert {
     $id = $self->{database}->id_generate();
     $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} = $id;
   }
+  push(@{$self->{data}}, $record);
+  pm_db_util::ini_write_file($self->record_path_get($id), $record);
+}
+
+
+sub update {
+  my ($self, $record) = @_;
+  pm_db_util::query_log("UPDATE $self->{table_name}");
+  $self->assert_table_exist_on_disk();
+  my $id;
+  exists $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD}
+    || die "Attempt to update a record which does not exist";
+  $id = $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD};
   push(@{$self->{data}}, $record);
   pm_db_util::ini_write_file($self->record_path_get($id), $record);
 }

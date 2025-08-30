@@ -52,6 +52,19 @@ sub assert_false {
 }
 
 
+sub assert_die {
+  my ($f, $text) = @_;
+  eval {
+    $f->();
+  };
+  if ($@) {
+    pm_log::debug("Exception occured: $@");
+  } else {
+    die "Expecting failure but did not happened: $text";
+  }
+}
+
+
 sub succeed {
   my ($text) = @_;
   print STDERR "SUCCESS|$text\n";
