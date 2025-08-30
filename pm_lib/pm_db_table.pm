@@ -64,13 +64,10 @@ sub insert {
   my ($self, $record) = @_;
   pm_db_util::query_log("INSERT INTO $self->{table_name}");
   $self->assert_table_exist_on_disk();
-  my $id;
-  if (exists $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD}) {
-    $id = $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD};
-  } else {
-    $id = $self->{database}->id_generate();
-    $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} = $id;
-  }
+  !exists $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD}
+    || die "Attempt to insert a record which already exist";
+  my $id = $self->{database}->id_generate();
+  $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} = $id;
   $self->{data}->push($record);
   pm_db_util::ini_write_file($self->record_path_get($id), $record);
 }
@@ -83,6 +80,22 @@ sub update {
   exists $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD}
     || die "Attempt to update a record which does not exist";
   my $id = $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD};
+  $self->{data}->push($record);
+  pm_db_util::ini_write_file($self->record_path_get($id), $record);
+}
+
+
+sub upsert {
+  my ($self, $record) = @_;
+  pm_db_util::query_log("UPSERT INTO $self->{table_name}");
+  $self->assert_table_exist_on_disk();
+  my $id;
+  if (exists $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD}) {
+    $id = $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD};
+  } else {
+    $id = $self->{database}->id_generate();
+    $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} = $id;
+  }
   $self->{data}->push($record);
   pm_db_util::ini_write_file($self->record_path_get($id), $record);
 }
