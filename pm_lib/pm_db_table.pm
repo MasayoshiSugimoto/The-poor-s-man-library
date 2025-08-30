@@ -21,7 +21,7 @@ sub new {
     my @l = ();
     my $directory = $self->path_get();
     foreach my $file (glob("$directory/*")) {
-      push(@l, pm_db_util::load_ini_file($file));
+      push(@l, pm_ini::ini_file_load($file));
     }
     $self->{data} = pm_list->new(\@l);
   }
@@ -69,7 +69,7 @@ sub insert {
   my $id = $self->{database}->id_generate();
   $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} = $id;
   $self->{data}->push($record);
-  pm_db_util::ini_write_file($self->record_path_get($id), $record);
+  pm_ini::ini_file_write($self->record_path_get($id), $record);
 }
 
 
@@ -81,7 +81,7 @@ sub update {
     || die "Attempt to update a record which does not exist";
   my $id = $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD};
   $self->{data}->push($record);
-  pm_db_util::ini_write_file($self->record_path_get($id), $record);
+  pm_ini::ini_file_write($self->record_path_get($id), $record);
 }
 
 
@@ -97,7 +97,7 @@ sub upsert {
     $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} = $id;
   }
   $self->{data}->push($record);
-  pm_db_util::ini_write_file($self->record_path_get($id), $record);
+  pm_ini::ini_file_write($self->record_path_get($id), $record);
 }
 
 

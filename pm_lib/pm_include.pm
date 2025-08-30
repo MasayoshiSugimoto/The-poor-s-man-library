@@ -20,6 +20,7 @@ use pm_file;
 use pm_list;
 use pm_color;
 use pm_arguments;
+use pm_ini;
 
 
 1;

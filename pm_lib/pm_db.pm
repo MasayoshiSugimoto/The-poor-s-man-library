@@ -19,7 +19,7 @@ sub new {
   my $metadata_path = "$path/$METADATA_FILE_NAME";
   if (!defined $_metadata && -e $metadata_path) {
     pm_log::info("Metadata not defined. Loading metadata file: $metadata_path.");
-    $_metadata = pm_db_util::load_ini_file($metadata_path);
+    $_metadata = pm_ini::ini_file_load($metadata_path);
   } elsif (!defined $_metadata && !-e $metadata_path) {
     pm_log::info("Metadata not defined. Creating metadata");
     $_metadata = {
@@ -91,7 +91,7 @@ sub id_generate {
   defined $_metadata || die "Metadata must be defined before generating ids";
   my $id = $_metadata->{id_counter};
   $_metadata->{id_counter}++;
-  pm_db_util::ini_write_file("$self->{path}/$METADATA_FILE_NAME", $_metadata);
+  pm_ini::ini_file_write("$self->{path}/$METADATA_FILE_NAME", $_metadata);
   return $id;
 }
 
