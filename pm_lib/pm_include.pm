@@ -19,6 +19,7 @@ use pm_constants;
 use pm_file;
 use pm_list;
 use pm_color;
+use pm_arguments;
 
 
 1;

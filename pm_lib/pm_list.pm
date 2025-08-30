@@ -1,6 +1,10 @@
 package pm_list;
 use strict;
 use warnings;
+use constant {
+  true => 1,
+  false => 0
+};
 
 
 sub new {
@@ -73,6 +77,17 @@ sub push {
 sub size {
   my ($self) = @_;
   return scalar @{$self->{data}};
+}
+
+
+sub contains {
+  my ($self, $value) = @_;
+  foreach my $x (@{$self->{data}}) {
+    if ($x == $value) {
+      return true;
+    }
+  }
+  return false;
 }
 
 
