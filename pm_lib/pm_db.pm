@@ -3,6 +3,10 @@ use strict;
 use warnings;
 
 
+my $_metadata;
+my $METADATA_FILE_NAME = "metadata.ini";
+
+
 sub new {
   my ($class, $path) = @_;
   my $self = {
@@ -10,6 +14,19 @@ sub new {
   };
   bless $self, $class;
   pm_log::debug("Database object created: path=$path");
+
+  # Load database metadata lazily
+  my $metadata_path = "$path/$METADATA_FILE_NAME";
+  if (!defined $_metadata && -e $metadata_path) {
+    pm_log::info("Metadata not defined. Loading metadata file: $metadata_path.");
+    $_metadata = pm_db_util::load_ini_file($metadata_path);
+  } elsif (!defined $_metadata && !-e $metadata_path) {
+    pm_log::info("Metadata not defined. Creating metadata");
+    $_metadata = {
+      id_counter => 0
+    };
+  }
+
   return $self;
 }
 
@@ -71,20 +88,10 @@ sub table_path_get {
 sub id_generate {
   my ($self) = @_;
   pm_log::debug("Generating database id");
-  my $path = "$self->{path}/metadata.ini";
-  my $metadata = {};
-  if (-e $path) {
-    pm_log::debug("Loading metadata file: $path");
-    $metadata = pm_db_util::load_ini_file($path);
-  } else {
-    pm_log::debug("Creating metadata file: $path");
-    $metadata = {
-      id_counter => 0
-    };
-  }
-  my $id = $metadata->{id_counter};
-  $metadata->{id_counter}++;
-  pm_db_util::ini_write_file($path, $metadata);
+  defined $_metadata || die "Metadata must be defined before generating ids";
+  my $id = $_metadata->{id_counter};
+  $_metadata->{id_counter}++;
+  pm_db_util::ini_write_file("$self->{path}/$METADATA_FILE_NAME", $_metadata);
   return $id;
 }
 
