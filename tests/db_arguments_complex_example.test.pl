@@ -6,7 +6,7 @@ use pm_include_test;
 
 # Parse a complex example of command line arguments
 
-pm_log::info("---");
+pm_log::debug("---");
 pm_arguments::flag_definition_set("-v", "VERBOSE");
 pm_arguments::flag_definition_set("--verbose", "VERBOSE");
 pm_arguments::flag_definition_set("-i", "IGNORE_CASE");
@@ -23,7 +23,7 @@ pm_test_util::assert_equals("2", pm_arguments::option_get("LINE_NUMBER"));
 pm_test_util::assert_equals(2, pm_arguments::positional_argument_size());
 pm_test_util::assert_equals("pattern", pm_arguments::positional_argument_get(0));
 pm_test_util::assert_equals("file", pm_arguments::positional_argument_get(1));
-pm_log::info("---");
+pm_log::debug("---");
 pm_arguments::clear();
 pm_arguments::flag_definition_set("-v", "VERBOSE");
 pm_arguments::flag_definition_set("--verbose", "VERBOSE");
@@ -48,7 +48,7 @@ pm_test_util::assert_equals("2", pm_arguments::option_get("LINE_NUMBER"));
 pm_test_util::assert_equals(2, pm_arguments::positional_argument_size());
 pm_test_util::assert_equals("pattern", pm_arguments::positional_argument_get(0));
 pm_test_util::assert_equals("file", pm_arguments::positional_argument_get(1));
-pm_log::info("---");
+pm_log::debug("---");
 pm_arguments::clear();
 pm_arguments::flag_definition_set("-v", "VERBOSE");
 pm_arguments::flag_definition_set("--verbose", "VERBOSE");
