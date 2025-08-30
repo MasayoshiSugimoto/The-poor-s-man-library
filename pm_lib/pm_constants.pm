@@ -9,5 +9,7 @@ use constant {
 
 our $LOG_DEBUG_ENABLE = true;
 
+our $DB_TABLE_PRIMARY_KEY_FIELD = "_primary_key";
+
 
 1;

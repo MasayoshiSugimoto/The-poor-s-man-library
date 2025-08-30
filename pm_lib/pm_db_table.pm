@@ -3,9 +3,6 @@ use strict;
 use warnings;
 
 
-my $DB_TABLE_PRIMARY_KEY_FIELD = "_primary_key";
-
-
 sub new {
   my ($class, $database, $table_name, $data) = @_;
   my $self = {
@@ -58,16 +55,23 @@ sub first {
 }
 
 
+sub all {
+  my ($self) = @_;
+  pm_db_util::query_log("ALL");
+  return $self->{data};
+}
+
+
 sub insert {
   my ($self, $record) = @_;
-  $self->assert_table_exist();
+  $self->assert_table_exist_on_disk();
   pm_db_util::query_log("INSERT INTO $self->{table_name}");
   my $id;
-  if (exists $record->{$DB_TABLE_PRIMARY_KEY_FIELD}) {
-    $id = $record->{$DB_TABLE_PRIMARY_KEY_FIELD};
+  if (exists $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD}) {
+    $id = $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD};
   } else {
     $id = $self->{database}->id_generate();
-    $record->{$DB_TABLE_PRIMARY_KEY_FIELD} = $id;
+    $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} = $id;
   }
   push(@{$self->{data}}, $record);
   pm_db_util::ini_write_file($self->record_path_get($id), $record);
@@ -80,7 +84,7 @@ sub set_columns {
 }
 
 
-sub assert_table_exist {
+sub assert_table_exist_on_disk {
   my ($self) = @_;
   if (!-d $self->path_get()) {
     die "Table does not exist: $self->path_get()";
