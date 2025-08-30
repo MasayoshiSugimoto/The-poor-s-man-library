@@ -34,6 +34,19 @@ sub assert_equals {
 }
 
 
+sub assert_undefined {
+  my ($value, $text) = @_;
+  if (defined $value) {
+    if (defined $text) {
+      fail("Value defined: $text");
+    } else {
+      fail("Value defined");
+
+    }
+  }
+}
+
+
 sub assert_true {
   my ($condition, $text) = @_;
   if (!$condition) {
