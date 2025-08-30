@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use pm_include;
 use pm_test_util;
+use pm_gen;
 use Exporter 'import';
 our @EXPORT = qw(true false);
 
