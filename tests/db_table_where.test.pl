@@ -29,4 +29,3 @@ pm_test_util::assert_equals(4, $v->{x}, "x is incorrect");
 pm_test_util::assert_equals(40, $v->{y}, "y is incorrect");
 $db->delete();
 pm_test_util::assert_false(-d $db_folder, "Failed to delete db");
-

@@ -6,7 +6,7 @@ use warnings;
 sub debug {
   my ($text) = @_;
   if ($pm_constants::LOG_DEBUG_ENABLE) {
-    print STDERR "DEBUG|$text\n";
+    print STDERR "${pm_color::GREY}DEBUG|$text${pm_color::RESET}\n";
   }
 }
 
@@ -19,13 +19,13 @@ sub info {
 
 sub warning {
   my ($text) = @_;
-  print STDERR "WARN|$text";
+  print STDERR "${pm_color::YELLOW}WARN|$text${pm_color::RESET}\n";
 }
 
 
 sub error {
   my ($text) = @_;
-  print STDERR "ERROR|$text";
+  print STDERR "${pm_color::RED}ERROR|$text${pm_color::RESET}\n";
 }
 
 

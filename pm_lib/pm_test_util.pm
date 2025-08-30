@@ -67,13 +67,13 @@ sub assert_die {
 
 sub succeed {
   my ($text) = @_;
-  print STDERR "SUCCESS|$text\n";
+  print STDERR "${pm_color::GREEN}SUCCESS${pm_color::RESET}|$text\n";
 }
 
 
 sub fail {
   my ($text) = @_;
-  print STDERR "FAILURE|$text\n";
+  print STDERR "${pm_color::RED}FAILURE${pm_color::RESET}|$text\n";
   exit 1;
 }
 
