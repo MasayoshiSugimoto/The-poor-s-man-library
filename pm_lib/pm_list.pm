@@ -46,7 +46,7 @@ sub filter {
 }
 
 
-sub each {
+sub for_each {
   my ($self, $f) = @_;
   my @result = ();
   foreach my $x (@{$self->{data}}) {
@@ -88,6 +88,21 @@ sub contains {
     }
   }
   return false;
+}
+
+
+sub join {
+  my ($self, $separator) = @_;
+  return pm_string::join($self->{data}, $separator);
+}
+
+sub of_hash {
+  my ($hash) = @_;
+  my $result = pm_list->new();
+  while (my ($key, $value) = each %{$hash}) {
+    $result->push({key => $key, value => $value});
+  }
+  return $result;
 }
 
 
