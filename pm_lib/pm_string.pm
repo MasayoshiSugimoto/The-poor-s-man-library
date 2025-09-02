@@ -19,7 +19,7 @@ sub join {
   }
   my $result = $strings->[0];
   for (my $i = 1; $i < $size; $i++) {
-    $result = $result . "$separator$strings->[$i]";
+    $result .= "$separator$strings->[$i]";
   }
   return $result;
 }

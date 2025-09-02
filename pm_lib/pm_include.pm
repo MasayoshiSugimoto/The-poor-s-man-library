@@ -22,6 +22,7 @@ use pm_color;
 use pm_arguments;
 use pm_ini;
 use pm_http_client;
+use pm_json;
 
 
 1;

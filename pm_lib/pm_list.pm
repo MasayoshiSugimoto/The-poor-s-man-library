@@ -74,6 +74,15 @@ sub push {
 }
 
 
+sub concat {
+  my ($self, $list) = @_;
+  my $result = pm_list->new();
+  $self->for_each(sub {$result->push($_[0])});
+  $list->for_each(sub {$result->push($_[0])});
+  return $result;
+}
+
+
 sub size {
   my ($self) = @_;
   return scalar @{$self->{data}};
