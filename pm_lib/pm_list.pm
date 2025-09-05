@@ -105,6 +105,7 @@ sub join {
   return pm_string::join($self->{data}, $separator);
 }
 
+
 sub of_hash {
   my ($hash) = @_;
   my $result = pm_list->new();
@@ -112,6 +113,31 @@ sub of_hash {
     $result->push({key => $key, value => $value});
   }
   return $result;
+}
+
+
+sub index_get {
+  my ($self, $value) = @_;
+  for (my $i = 0; $i < $self->size(); $i++) {
+    if ("$self->{data}->[$i]" eq "$value") {
+      return $i;
+    }
+  }
+  return -1;
+}
+
+
+sub equals {
+  my ($self, $list) = @_;
+  if ($self->size() != $list->size()) {
+    return false;
+  }
+  for (my $i = 0; $i < $self->size(); $i++) {
+    if ($self->get($i) ne $list->get($i)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 

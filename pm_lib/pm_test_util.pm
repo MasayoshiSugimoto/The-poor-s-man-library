@@ -16,20 +16,8 @@ sub assert_equals {
   if (!defined $text) {
     $text = "Unexpected value";
   }
-  if (!ref($expected) && !ref($actual)) {
-    if (looks_like_number($expected) && looks_like_number($actual)) {
-      if ($expected != $actual) {
-        fail("$text: expected:$expected actual:$actual");
-      }
-    } elsif (!looks_like_number($expected) && !looks_like_number($actual)) {
-      if ($expected ne $actual) {
-        fail("$text: expected:$expected actual:$actual");
-      }
-    } else {
-      fail("$text: expected:$expected actual:$actual");
-    }
-  } else {
-    fail("Unsupported");
+  if (!pm_misc::equals($expected, $actual)) {
+    fail("$text: expected:$expected actual:$actual");
   }
 }
 

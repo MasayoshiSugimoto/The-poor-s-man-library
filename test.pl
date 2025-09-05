@@ -12,7 +12,7 @@ my $test_dir_path = "tests";
 opendir(my $test_dir, $test_dir_path) or die "Cannot open $test_dir_path $!";
 my @files = grep { -f "$test_dir_path/$_" } readdir($test_dir);
 # Change the file name to test only one file.
-#@files = ("file_load_as_string.test.pl");
+# @files = ("table_push.test.pl");
 foreach my $file (@files) {
   pm_log::info("Executing test: $file");
   my $success = system("perl $test_dir_path/$file");

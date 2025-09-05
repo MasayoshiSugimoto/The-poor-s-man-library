@@ -9,4 +9,12 @@ sub assert_defined {
 }
 
 
+sub assert_equals {
+  my ($a, $b, $text) = @_;
+  if (!pm_misc::equals($a, $b)) {
+    die "Values are different: $text";
+  }
+}
+
+
 1;

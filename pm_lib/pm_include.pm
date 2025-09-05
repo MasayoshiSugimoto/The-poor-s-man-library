@@ -23,6 +23,10 @@ use pm_arguments;
 use pm_ini;
 use pm_http_client;
 use pm_json;
+use pm_csv;
+use pm_table;
+use pm_assert;
+use pm_misc;
 
 
 1;

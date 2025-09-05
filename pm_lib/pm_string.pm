@@ -25,4 +25,18 @@ sub join {
 }
 
 
+sub split {
+  my ($regex, $string) = @_;
+  my @groups = split($regex, $string);
+  return pm_list->new(\@groups);
+}
+
+
+sub split_by_line {
+  my ($string) = @_;
+  my @lines = split(/[^\\]\n/, $string);
+  return pm_list->new(\@lines);
+}
+
+
 1;
