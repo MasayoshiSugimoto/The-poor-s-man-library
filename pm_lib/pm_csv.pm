@@ -39,5 +39,17 @@ sub pm_csv::from_string {
 }
 
 
+sub pm_csv::csv_from_string {
+  my ($string, $has_header) = @_;
+  from_string($string, $has_header, ",");
+}
+
+
+sub pm_csv::tsv_from_string {
+  my ($string, $has_header) = @_;
+  from_string($string, $has_header, "	");
+}
+
+
 1;
 
