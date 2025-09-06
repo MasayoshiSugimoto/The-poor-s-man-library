@@ -49,4 +49,10 @@ sub split_by_line {
 }
 
 
+sub is_empty {
+  my ($string) = @_;
+  return as_safe_string($string) eq "";
+}
+
+
 1;
