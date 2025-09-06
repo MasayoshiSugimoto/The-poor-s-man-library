@@ -49,7 +49,7 @@ sub parse {
       push(@_positional_arguments, $arg);
     }
   }
-  !defined $option || die "Option not defined: $option";
+  !defined $option or die pm_log::exception("Option not defined: $option");
 }
 
 

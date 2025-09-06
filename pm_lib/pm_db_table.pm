@@ -65,7 +65,7 @@ sub insert {
   pm_db_util::query_log("INSERT INTO $self->{table_name}");
   $self->assert_table_exist_on_disk();
   !exists $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD}
-    || die "Attempt to insert a record which already exist";
+    or die pm_log::exception("Attempt to insert a record which already exist");
   my $id = $self->{database}->id_generate();
   $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} = $id;
   $self->{data}->push($record);
@@ -78,7 +78,7 @@ sub update {
   pm_db_util::query_log("UPDATE $self->{table_name}");
   $self->assert_table_exist_on_disk();
   exists $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD}
-    || die "Attempt to update a record which does not exist";
+    or die pm_log::exception("Attempt to update a record which does not exist");
   my $id = $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD};
   $self->{data}->push($record);
   pm_ini::ini_file_write($self->record_path_get($id), $record);
@@ -106,7 +106,7 @@ sub delete {
   pm_db_util::query_log("DELETE $self->{table_name}");
   $self->assert_table_exist_on_disk();
   exists $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD}
-    || die "Attempt to delete a record which does not has a primary key";
+    or die pm_log::exception("Attempt to delete a record which does not has a primary key");
   my $id = $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD};
   $self->{data} = $self->{data}
     ->filter(sub {$_[0]->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} != $id});
@@ -123,7 +123,7 @@ sub set_columns {
 sub assert_table_exist_on_disk {
   my ($self) = @_;
   if (!-d $self->path_get()) {
-    die "Table does not exist: $self->path_get()";
+    die pm_log::exception("Table does not exist: $self->path_get()");
   }
 }
 

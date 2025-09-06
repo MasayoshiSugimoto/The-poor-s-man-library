@@ -115,7 +115,7 @@ sub get {
   my ($self, $column_name) = @_;
   $self->assert_invariant();
   my $index = $self->{columns}->index_get($column_name);
-  $index >= 0 || die "Invalid column_name: $column_name";
+  $index >= 0 || die pm_log::exception("Invalid column_name: $column_name");
   return $self->{record}->[$index];
 }
 

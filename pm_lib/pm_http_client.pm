@@ -60,7 +60,7 @@ sub as_command {
     if ($self->{content_type} eq $CONTENT_TYPE_JSON) {
       $content_type->push("-H 'Content-type: $self->{content_type}'");
     } else {
-      die "Content-type not supported: $self->{content_type}";
+      die pm_log::exception("Content-type not supported: $self->{content_type}");
     }
   }
   my $headers = pm_list::of_hash($self->{headers})

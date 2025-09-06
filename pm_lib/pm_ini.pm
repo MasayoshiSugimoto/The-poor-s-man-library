@@ -6,7 +6,7 @@ use warnings;
 sub ini_file_load {
   my ($path) = @_;
   my %file_as_map = ();
-  open my $fh, '<', $path or die "Can't open file: $!";
+  open my $fh, '<', $path or die pm_log::exception("Can't open file: $!");
   while (my $line = <$fh>) {
     $line = pm_string::without_new_line($line);
     if ($line =~ /([^=]+)=(.*)/) {
@@ -24,7 +24,7 @@ sub ini_file_load {
 
 sub ini_file_write {
   my ($path, $record) = @_;
-  open my $fh, '>', $path or die "Can't open file $path: $!";
+  open my $fh, '>', $path or die pm_log::exception("Can't open file $path: $!");
   while (my ($key, $value) = each %$record) {
     print $fh "$key=$value\n";
   }

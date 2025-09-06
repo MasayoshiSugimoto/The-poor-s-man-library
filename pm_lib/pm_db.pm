@@ -73,7 +73,7 @@ sub select {
   pm_db_util::query_log("SELECT $table_name");
   my $path = $self->table_path_get($table_name);
   if (!-d $path) {
-    die "Table does not exist: $path"
+    die pm_log::exception("Table does not exist: $path");
   }
   return pm_db_table->new($self, $table_name);
 }
@@ -88,7 +88,8 @@ sub table_path_get {
 sub id_generate {
   my ($self) = @_;
   pm_log::debug("Generating database id");
-  defined $_metadata || die "Metadata must be defined before generating ids";
+  defined $_metadata
+    or die pm_log::exception("Metadata must be defined before generating ids");
   my $id = $_metadata->{id_counter};
   $_metadata->{id_counter}++;
   pm_ini::ini_file_write("$self->{path}/$METADATA_FILE_NAME", $_metadata);

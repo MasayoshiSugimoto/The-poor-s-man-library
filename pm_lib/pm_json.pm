@@ -51,7 +51,7 @@ sub as_json {
   } elsif (!$type) {
     $result = "\"$x\"";
   } else {
-    die "Type $type not supported";
+    die pm_log::exception("Type $type not supported");
   }
   return $result;
 }

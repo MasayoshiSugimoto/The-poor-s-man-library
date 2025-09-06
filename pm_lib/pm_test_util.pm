@@ -61,7 +61,7 @@ sub assert_die {
   if ($@) {
     pm_log::debug("Exception occured: $@");
   } else {
-    die "Expecting failure but did not happened: $text";
+    die pm_log::exception("Expecting failure but did not happened: $text");
   }
 }
 

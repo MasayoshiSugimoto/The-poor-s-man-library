@@ -16,7 +16,7 @@ sub assert_defined {
 sub assert_equals {
   my ($a, $b, $text) = @_;
   if (!pm_misc::equals($a, $b)) {
-    die pm_log::exception("Values are different: $text");
+    die pm_log::exception("Values are different: $text. a=$a, b=$b");
   }
 }
 

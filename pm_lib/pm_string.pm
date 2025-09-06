@@ -27,15 +27,25 @@ sub join {
 
 sub split {
   my ($regex, $string) = @_;
-  my @groups = split($regex, $string);
+  my @groups = split($regex, $string, -1);
   return pm_list->new(\@groups);
+}
+
+
+sub as_safe_string {
+  my ($string) = @_;
+  if (!defined $string) {
+    return "";
+  }
+  return $string;
 }
 
 
 sub split_by_line {
   my ($string) = @_;
-  my @lines = split(/[^\\]\n/, $string);
-  return pm_list->new(\@lines);
+  my @lines = split(/\n/, $string, -1);
+  return pm_list->new(\@lines)
+    ->map(\&as_safe_string);
 }
 
 
