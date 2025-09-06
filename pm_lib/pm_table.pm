@@ -5,6 +5,8 @@ use warnings;
 package pm_table;
 
 
+# columns: ARRAY or pm_list
+# data: ARRAY of ARRAY
 sub new {
   pm_log::debug("Creating table");
   my ($class, $columns, $data) = @_;
@@ -24,6 +26,7 @@ sub new {
 
 sub filter {
   my ($self, $f_filter) = @_;
+  $self->assert_invariant();
   my $record = pm_table_record->new($self->{columns});
   my @data = ();
   foreach my $r (@{$self->{data}}) {
@@ -36,6 +39,7 @@ sub filter {
 
 sub first {
   my ($self) = @_;
+  $self->assert_invariant();
   if ($self->size() == 0) {
     return undef;
   }
@@ -45,26 +49,25 @@ sub first {
 
 sub get {
   my ($self, $index) = @_;
+  $self->assert_invariant();
   my $size = $self->size();
   if ($index >= $size) {
-    die "Index out of bound: index=$index, size=$size";
+    die pm_log::exception("Index out of bound: index=$index, size=$size");
   }
-  my %record = ();
-  for (my $i = 0; $i < $self->{columns}->size(); $i++) {
-    $record{$self->{columns}->get($i)} = $self->{data}->[$index]->[$i];
-  }
-  return \%record;
+  return pm_table_record->new($self->{columns}, $self->{data}->[$index]);
 }
 
 
 sub size {
   my ($self) = @_;
+  $self->assert_invariant();
   return scalar @{$self->{data}};
 }
 
 
 sub push {
   my ($self, $record) = @_;
+  $self->assert_invariant();
   pm_assert::assert_defined($record, "Record can be undef");
   if (ref($record) eq "ARRAY") {
     pm_assert::assert_equals(scalar @$record, $self->{columns}->size(), "Record size is incorrect");
@@ -72,6 +75,17 @@ sub push {
   } else {
     pm_assert::assert_equals($record->size(), $self->{columns}->size(), "Record size is incorrect");
     push(@{$self->{data}}, $record->as_array());
+  }
+}
+
+
+sub assert_invariant {
+  my ($self) = @_;
+  pm_assert::assert_defined($self->{columns}, "Null columns");
+  pm_assert::assert_defined($self->{data}, "Null data");
+  my $size = $self->{columns}->size();
+  if ($size > 0) {
+    pm_assert::assert_equals($size, scalar @{$self->{data}->[0]}, "Inconsistent size");
   }
 }
 
@@ -92,15 +106,50 @@ sub new {
 
 sub record_set {
   my ($self, $record) = @_;
+  pm_assert::assert_equals($self->{columns}->size(), scalar @$record, "Invalid record size");
   $self->{record} = $record;
 }
 
 
 sub get {
   my ($self, $column_name) = @_;
+  $self->assert_invariant();
   my $index = $self->{columns}->index_get($column_name);
   $index >= 0 || die "Invalid column_name: $column_name";
   return $self->{record}->[$index];
+}
+
+
+sub size {
+  my ($self) = @_;
+  $self->assert_invariant();
+  return scalar @{$self->{record}};
+}
+
+
+sub as_hash {
+  my ($self) = @_;
+  $self->assert_invariant();
+  my %hash = ();
+  for (my $i = 0; $i < $self->size(); $i++) {
+    $hash{$self->{columns}->get($i)} = $self->{record}->[$i];
+  }
+  return \%hash;
+}
+
+
+sub normalize {
+  my ($self) = @_;
+  $self->assert_invariant();
+  return $self->as_hash();
+}
+
+
+sub assert_invariant {
+  my ($self) = @_;
+  pm_assert::assert_defined($self->{columns});
+  pm_assert::assert_defined($self->{record});
+  pm_assert::assert_true($self->{columns}->size(), scalar @{$self->{record}});
 }
 
 

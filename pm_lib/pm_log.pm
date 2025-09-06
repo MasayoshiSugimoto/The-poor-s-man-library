@@ -29,6 +29,12 @@ sub error {
 }
 
 
+sub exception {
+  my ($text) = @_;
+  return "${pm_color::RED}ERROR|$text${pm_color::RESET}\n";
+}
+
+
 sub separator {
   print "################################################################################\n"
 }

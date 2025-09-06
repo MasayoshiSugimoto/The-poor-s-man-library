@@ -10,6 +10,9 @@ use constant {
 sub equals {
   my ($a, $b) = @_;
 
+  $a = normalize($a);
+  $b = normalize($b);
+
   # Compare undefined values
   return true if !defined($a) && !defined($b);
   return false if !defined($a) || !defined($b);
@@ -46,6 +49,20 @@ sub equals {
   } else {
     return $a eq $b;
   }
+}
+
+
+sub normalize {
+  my ($x) = @_;
+  my $refX = ref($x);
+  return $x if (!defined $x);
+  return $x if (!ref($x));
+  return $x if ($refX eq 'ARRAY');
+  return $x if ($refX eq 'HASH');
+  return $x if ($refX eq 'SCALAR');
+  return $x if ($refX eq 'CODE');
+  return $x->normalize() if ($x->can('normalize'));
+  return $x;
 }
 
 

@@ -141,5 +141,11 @@ sub equals {
 }
 
 
+sub normalize {
+  my ($self) = @_;
+  return $self->as_array();
+}
+
+
 1;
 
