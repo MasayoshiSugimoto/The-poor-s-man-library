@@ -55,4 +55,24 @@ sub is_empty {
 }
 
 
+sub left_pad {
+  my ($string, $target_length, $character) = @_;
+  $character = " " if (!defined $character);
+  my $string_length = length($string);
+  my $padding_length = $target_length - $string_length;
+  my $padding = $character x ($padding_length);
+  return "$padding$string";
+}
+
+
+sub right_pad {
+  my ($string, $target_length, $character) = @_;
+  $character = " " if (!defined $character);
+  my $string_length = length($string);
+  my $padding_length = $target_length - $string_length;
+  my $padding = $character x ($padding_length);
+  return "$string$padding";
+}
+
+
 1;

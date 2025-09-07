@@ -92,12 +92,30 @@ sub assert_invariant {
 
 sub map {
   my ($self, $f) = @_;
+  $self->assert_invariant();
   my $result = pm_list->new();
+  my $record = pm_table_record->new($self->{columns});
   foreach my $r (@{$self->{data}}) {
     $record->record_set($r);
     $result->push($f->($record)); 
   }
   return $result;
+}
+
+
+sub cell {
+  my ($self, $x, $y) = @_;
+  $self->assert_invariant();
+  pm_assert::assert_true($x < $self->{columns}->size());
+  pm_assert::assert_true($y < scalar @{$self->{data}});
+  return $self->{data}->[$y]->[$x];
+}
+
+
+sub columns_get {
+  my ($self) = @_;
+  $self->assert_invariant();
+  return $self->{columns};
 }
 
 
