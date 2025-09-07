@@ -90,6 +90,17 @@ sub assert_invariant {
 }
 
 
+sub map {
+  my ($self, $f) = @_;
+  my $result = pm_list->new();
+  foreach my $r (@{$self->{data}}) {
+    $record->record_set($r);
+    $result->push($f->($record)); 
+  }
+  return $result;
+}
+
+
 package pm_table_record;
 
 
