@@ -31,11 +31,11 @@ $table = pm_table->new(undef, $data);
 $md = pm_md::table_as_markdown($table);
 pm_log::debug($md);
 $expected = <<EOF;
-| First Name | Last Name | Tel     |
-|------------|-----------|---------|
-| Jean       | Dupond    | 1234567 |
-| Michel     | Durand    | 2345678 |
-| Giselle    | Proust    | 3456789 |
+| c1      | c2     | c3      |
+|---------|--------|---------|
+| Jean    | Dupond | 1234567 |
+| Michel  | Durand | 2345678 |
+| Giselle | Proust | 3456789 |
 EOF
 pm_test_util::assert_equals($expected, $md, "Tables are different");
 

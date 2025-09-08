@@ -10,9 +10,14 @@ package pm_table;
 sub new {
   pm_log::debug("Creating table");
   my ($class, $columns, $data) = @_;
-  die pm_log::exception("columns not defined") if (!defined $columns);
   die pm_log::exception("data not defined") if (!defined $data);
-  if (ref($columns) eq "ARRAY") {
+  if (!defined $columns) {
+    die pm_log::exception("At least one record is required.") if (scalar @$data == 0);
+    $columns = pm_list->new();
+    for (my $i = 1; $i <= scalar @{$data->[0]}; $i++) {
+      $columns->push("c$i");
+    }
+  } elsif (ref($columns) eq "ARRAY") {
     $columns = pm_list->new($columns);
   }
   my $self = {
