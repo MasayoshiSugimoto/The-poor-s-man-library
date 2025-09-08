@@ -51,5 +51,32 @@ sub pm_csv::tsv_from_string {
 }
 
 
+sub pm_csv::as_csv {
+  my ($table, $has_header, $separator) = @_;
+  $separator = "," if (!defined $separator);
+  my $width = $table->width();
+  my $height = $table->height();
+  pm_log::debug("width=$width, height=$height");
+  my $result = "";
+  if ($has_header) {
+    $result .= $table->columns_get()->join(",");
+  }
+  for (my $y = 0; $y < $height; $y++) {
+    $result .= "\n" if ($y > 0 || $has_header);
+    for (my $x = 0; $x < $width; $x++) {
+      $result .= "$separator" if ($x > 0);
+      $result .= $table->cell($x, $y);
+    }
+  }
+  return $result;
+}
+
+
+sub pm_csv::as_tsv {
+  my ($table, $has_header) = @_;
+  return as_csv($table, $has_header, "	");
+}
+
+
 1;
 

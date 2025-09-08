@@ -10,8 +10,8 @@ package pm_table;
 sub new {
   pm_log::debug("Creating table");
   my ($class, $columns, $data) = @_;
-  pm_assert::assert_defined($columns);  # Array or List
-  pm_assert::assert_defined($data);  # Array of Array
+  die pm_log::exception("columns not defined") if (!defined $columns);
+  die pm_log::exception("data not defined") if (!defined $data);
   if (ref($columns) eq "ARRAY") {
     $columns = pm_list->new($columns);
   }
@@ -116,6 +116,20 @@ sub columns_get {
   my ($self) = @_;
   $self->assert_invariant();
   return $self->{columns};
+}
+
+
+sub width {
+  my ($self) = @_;
+  $self->assert_invariant();
+  return $self->{columns}->size();
+}
+
+
+sub height {
+  my ($self) = @_;
+  $self->assert_invariant();
+  return scalar @{$self->{data}};
 }
 
 
