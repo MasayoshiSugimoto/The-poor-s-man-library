@@ -54,15 +54,15 @@ sub parse {
 
 
 sub option_definition_set {
-  pm_log::debug("Setting option definition");
   my ($option_string, $option_id) = @_;
+  pm_log::debug("Setting option definition: $option_string:$option_id");
   $_option_definitions{$option_string} = $option_id;
 }
 
 
 sub flag_definition_set {
-  pm_log::debug("Setting flag definition");
   my ($flag_string, $flag_id) = @_;
+  pm_log::debug("Setting flag definition: $flag_string:$flag_id");
   $_flag_definitions{$flag_string} = $flag_id;
 }
 
