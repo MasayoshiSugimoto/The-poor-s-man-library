@@ -17,7 +17,9 @@ sub assert_equals {
     $text = "Unexpected value";
   }
   if (!pm_misc::equals($expected, $actual)) {
-    fail("$text: expected:$expected actual:$actual");
+    my $expected_text = pm_misc::as_text($expected);
+    my $actual_text = pm_misc::as_text($actual);
+    fail("$text: expected:$expected_text actual:$actual_text");
   }
 }
 

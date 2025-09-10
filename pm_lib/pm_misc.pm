@@ -16,11 +16,9 @@ sub equals {
   # Compare undefined values
   return true if !defined($a) && !defined($b);
   return false if !defined($a) || !defined($b);
-
   # Compare references
   if (ref($a) || ref($b)) {
     return false if ref($a) ne ref($b);
-
     if (ref($a) eq 'ARRAY') {
       return false if (scalar @$a != scalar @$b);
       for (my $i = 0; $i < scalar @$a; $i++) {
@@ -63,6 +61,32 @@ sub normalize {
   return $x if ($refX eq 'CODE');
   return $x->normalize() if ($x->can('normalize'));
   return $x;
+}
+
+
+sub as_text {
+  my ($x) = @_;
+  return "undef" if (!defined $x);
+  my $refX = ref($x);
+  if ($refX eq 'ARRAY') {
+    my $result = "[";
+    my $first = true;
+    for my $i (@$x) {
+      if ($first) {
+        $result .= $i;
+        $first = false;
+      } else {
+        $result .= ",$i";
+      }
+    }
+    $result .= "]";
+    return $result;
+  }
+  return "$x" if ($refX eq 'HASH');
+  return "$x" if ($refX eq 'SCALAR');
+  return "$x" if ($refX eq 'CODE');
+  return $x->as_text() if ($x->can('as_text'));
+  return "$x";
 }
 
 

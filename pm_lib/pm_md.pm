@@ -58,5 +58,28 @@ sub table_as_markdown {
 }
 
 
+sub parse_markdown_table {
+  my ($markdown) = @_;
+  my @lines = grep { /\|/ } split /\n/, $markdown;
+
+  # Extract header
+  my @headers = map { s/^\s+|\s+$//gr } split /\|/, shift @lines, -1;
+  shift @headers;  # Line always starts with `|`
+  pop @headers;  # Line always ends with `|`
+  shift @lines;  # Skip alignment row
+
+  my @rows;
+  for my $line (@lines) {
+    my @fields = map { s/^\s+|\s+$//gr } split /\|/, $line, -1;
+    shift @fields;
+    pop @fields;
+    next unless @fields == @headers;
+    push @rows, \@fields;
+  }
+
+  return pm_table->new(\@headers, \@rows);
+}
+
+
 1;
 

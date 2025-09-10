@@ -147,5 +147,12 @@ sub normalize {
 }
 
 
+sub as_text {
+  my ($self) = @_;
+  my $fields = $self->join(", ");
+  return "[$fields]";
+}
+
+
 1;
 

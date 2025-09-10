@@ -58,6 +58,8 @@ if ($input_type eq "tsv") {
   $table = pm_csv::tsv_from_string($input, $header);
 } elsif ($input_type eq "csv") {
   $table = pm_csv::csv_from_string($input, $header);
+} elsif ($input_type eq "md") {
+  $table = pm_md::parse_markdown_table($input);
 }
 
 if ($output_type eq "tsv") {
