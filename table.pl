@@ -12,6 +12,41 @@ use constant {
 };
 
 
+sub help {
+  my $text = <<'EOF';
+TABLE CONVERTER
+===============
+
+This program converts table of different formats.
+Input are read from stdin and converted table is written
+to stdout.
+
+USAGE
+-----
+
+  ./table.pl [OPTIONS]
+
+By default the program converts a tsv file to markdown.
+
+  cat file.tsv | ./table.pl
+
+OPTIONS
+-------
+
+| Short Option | Long Option         | Description                                         |
+|--------------|---------------------|-----------------------------------------------------|
+| -i $TYPE     | --input-type $TYPE  | Select input type. [`md`, `csv`, `tsv`]             |
+| -o $TYPE     | --output-type $TYPE | Select output type. [`md`, `csv`, `tsv`]            |
+| -d           | --debug             | Enable debug logs.                                  |
+| -N           | --no-input-header   | Set flag if the input table does not have a header. |
+|              |                     | `md` not supported.                                 |
+| -X           | --no-output-header  | Set flag to remove the header from the output.      |
+|              |                     | `md` not supported.                                 |
+| -h           | --help              | Display this help message.                          |
+EOF
+}
+
+
 $pm_constants::LOG_DEBUG_ENABLE = false;
 pm_arguments::flag_definition_set("-h", "HELP");
 pm_arguments::flag_definition_set("--help", "HELP");

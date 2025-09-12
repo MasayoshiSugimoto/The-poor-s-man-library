@@ -16,6 +16,7 @@ sub pm_csv::from_string {
   if (!defined $separator) {
     $separator = ",";
   }
+  $string =~ s/\r//g;
   my @lines = split(/\n/, $string, -1);
   pm_assert::assert_true(scalar @lines > 0, "Empty csv");
   my @header = ();
