@@ -59,7 +59,7 @@ sub pm_csv::as_csv {
   pm_log::debug("width=$width, height=$height");
   my $result = "";
   if ($has_header) {
-    $result .= $table->columns_get()->join(",");
+    $result .= $table->columns_get()->join($separator);
   }
   for (my $y = 0; $y < $height; $y++) {
     $result .= "\n" if ($y > 0 || $has_header);

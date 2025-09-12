@@ -15,8 +15,10 @@ use constant {
 $pm_constants::LOG_DEBUG_ENABLE = false;
 pm_arguments::flag_definition_set("-h", "HELP");
 pm_arguments::flag_definition_set("--help", "HELP");
-pm_arguments::flag_definition_set("-H", "HEADER");
-pm_arguments::flag_definition_set("--header", "HEADER");
+pm_arguments::flag_definition_set("-N", "NO_INPUT_HEADER");
+pm_arguments::flag_definition_set("--no-input-header", "NO_INPUT_HEADER");
+pm_arguments::flag_definition_set("-X", "NO_OUTPUT_HEADER");
+pm_arguments::flag_definition_set("--no-output-header", "NO_OUTPUT_HEADER");
 pm_arguments::flag_definition_set("-d", "DEBUG");
 pm_arguments::flag_definition_set("--debug", "DEBUG");
 pm_arguments::option_definition_set("-i", "INPUT_TYPE");
@@ -26,7 +28,8 @@ pm_arguments::option_definition_set("--output-type", "OUTPUT_TYPE");
 pm_arguments::parse(@ARGV);
 
 my $help = pm_arguments::flag_get("HELP");
-my $header = pm_arguments::flag_get("HEADER");
+my $input_has_header = !pm_arguments::flag_get("NO_INPUT_HEADER");
+my $output_has_header = !pm_arguments::flag_get("NO_OUTPUT_HEADER");
 my $debug = pm_arguments::flag_get("DEBUG");
 my $input_type = pm_arguments::option_get("INPUT_TYPE");
 my $output_type = pm_arguments::option_get("OUTPUT_TYPE");
@@ -46,7 +49,8 @@ if ($debug) {
   pm_log::debug("==========");
   pm_log::debug();
   pm_log::debug("help=$help");
-  pm_log::debug("header=$header");
+  pm_log::debug("input_has_header=$input_has_header");
+  pm_log::debug("output_has_header=$output_has_header");
   pm_log::debug("debug=$debug");
   pm_log::debug("input_type=$input_type");
   pm_log::debug("output_type=$output_type");
@@ -55,17 +59,17 @@ if ($debug) {
 my $input = do { local $/; <STDIN> };
 my $table;
 if ($input_type eq "tsv") {
-  $table = pm_csv::tsv_from_string($input, $header);
+  $table = pm_csv::tsv_from_string($input, $input_has_header);
 } elsif ($input_type eq "csv") {
-  $table = pm_csv::csv_from_string($input, $header);
+  $table = pm_csv::csv_from_string($input, $input_has_header);
 } elsif ($input_type eq "md") {
   $table = pm_md::parse_markdown_table($input);
 }
 
 if ($output_type eq "tsv") {
-  print(pm_csv::as_tsv($table));
+  print(pm_csv::as_tsv($table, $output_has_header));
 } elsif ($output_type eq "csv") {
-  print(pm_csv::as_csv($table));
+  print(pm_csv::as_csv($table, $output_has_header));
 } elsif ($output_type eq "md") {
   print(pm_md::table_as_markdown($table));
 }
