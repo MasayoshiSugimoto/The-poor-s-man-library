@@ -99,6 +99,8 @@ if ($input_type eq "tsv") {
   $table = pm_csv::csv_from_string($input, $input_has_header);
 } elsif ($input_type eq "md") {
   $table = pm_md::parse_markdown_table($input);
+} elsif ($input_type eq "json") {
+  $table = pm_json::json_as_table(pm_json::parse($input));
 }
 
 if ($output_type eq "tsv") {
