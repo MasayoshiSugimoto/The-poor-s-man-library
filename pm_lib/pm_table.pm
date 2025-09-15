@@ -11,6 +11,7 @@ sub new {
   pm_log::debug("Creating table");
   my ($class, $columns, $data) = @_;
   die pm_log::exception("data not defined") if (!defined $data);
+  die pm_log::exception("data not an array") if (ref($data) ne "ARRAY");
   if (!defined $columns) {
     die pm_log::exception("At least one record is required.") if (scalar @$data == 0);
     $columns = pm_list->new();
@@ -19,6 +20,10 @@ sub new {
     }
   } elsif (ref($columns) eq "ARRAY") {
     $columns = pm_list->new($columns);
+  } elsif (ref($columns) eq "pm_list") {
+    # Nothing to do
+  } else {
+    die pm_log::exception("Columns must be arrays or lists.");
   }
   my $self = {
     columns => $columns,

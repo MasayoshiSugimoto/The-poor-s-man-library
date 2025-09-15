@@ -170,4 +170,32 @@ sub parse {
 }
 
 
+sub json_as_table {
+  my ($json) = @_;
+  pm_assert::assert_equals("pm_list", ref($json), "Input json must be an array.");
+  pm_assert::assert_true($json->size() > 0, "Input json cannot be an empty array.");
+  # Extract header
+  my $raw_header = $json->get(0);
+  pm_assert::assert_equals("HASH", ref($raw_header), "Input json must be a list of hash.");
+  my $header = pm_list->new();
+  for my $key (keys %{$raw_header}) {
+    pm_log::debug("key=$key");
+    $header->push($key);
+  }
+  my $header_as_text = $header->as_text();
+  pm_log::debug("header=$header_as_text");
+  # Extract data
+  my $as_array = sub {
+    my ($record) = @_;
+    my $result = $header->map(sub {$record->{$_[0]}});
+    pm_log::debug($result->as_text());
+    return $result->as_array();
+  };
+  pm_log::debug("data=");
+  my $data = $json->map($as_array)
+    ->as_array();
+  return pm_table->new($header, $data);
+}
+
+
 1;

@@ -92,7 +92,7 @@ sub size {
 sub contains {
   my ($self, $value) = @_;
   foreach my $x (@{$self->{data}}) {
-    if ($x == $value) {
+    if (pm_misc::equals($x, $value)) {
       return true;
     }
   }
