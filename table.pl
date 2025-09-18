@@ -109,4 +109,6 @@ if ($output_type eq "tsv") {
   print(pm_csv::as_csv($table, $output_has_header));
 } elsif ($output_type eq "md") {
   print(pm_md::table_as_markdown($table));
+} elsif ($output_type eq "json") {
+  print(pm_json::as_json($table->as_array_of_hash()));
 }

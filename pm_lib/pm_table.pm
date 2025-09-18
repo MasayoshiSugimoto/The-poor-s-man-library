@@ -143,6 +143,21 @@ sub height {
 }
 
 
+sub as_array_of_hash {
+  my ($self) = @_;
+  my $columns = $self->columns_get();
+  my @lines = ();
+  for (my $y = 0; $y < $self->height(); $y++) {
+    my %row = ();
+    for (my $x = 0; $x < $self->width(); $x++) {
+      $row{$columns->get($x)} = $self->cell($x, $y);
+    }
+    CORE::push(@lines, \%row);
+  }
+  return \@lines;
+}
+
+
 package pm_table_record;
 
 
