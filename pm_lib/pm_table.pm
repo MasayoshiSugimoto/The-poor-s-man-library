@@ -13,10 +13,10 @@ sub new {
   die pm_log::exception("data not defined") if (!defined $data);
   die pm_log::exception("data not an array") if (ref($data) ne "ARRAY");
   if (!defined $columns) {
-    die pm_log::exception("At least one record is required.") if (scalar @$data == 0);
     $columns = pm_list->new();
-    for (my $i = 1; $i <= scalar @{$data->[0]}; $i++) {
-      $columns->push("c$i");
+    my $A = 65;
+    for (my $i = 0; $i < scalar @{$data->[0]}; $i++) {
+      $columns->push(chr($A + $i));
     }
   } elsif (ref($columns) eq "ARRAY") {
     $columns = pm_list->new($columns);
@@ -31,6 +31,22 @@ sub new {
   };
   bless $self, $class;
   return $self;
+}
+
+
+sub from_data_with_header {
+  my ($array_of_array) = @_;
+  pm_assert::assert_equals("ARRAY", ref($array_of_array), "Argument must be an array.");
+  my $height = @$array_of_array;
+  if ($height == 0) {
+    return pm_table->new([], $array_of_array);
+  }
+  my $columns = $array_of_array->[0];
+  my @data = ();
+  for (my $i = 1; $i < $height; $i++) {
+    CORE::push(@data, $array_of_array->[$i]);
+  }
+  return pm_table->new($columns, \@data);
 }
 
 

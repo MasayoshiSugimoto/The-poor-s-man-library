@@ -31,7 +31,7 @@ $table = pm_table->new(undef, $data);
 $md = pm_md::table_as_markdown($table);
 pm_log::debug($md);
 $expected = <<EOF;
-| c1      | c2     | c3      |
+| A       | B      | C       |
 |---------|--------|---------|
 | Jean    | Dupond | 1234567 |
 | Michel  | Durand | 2345678 |
