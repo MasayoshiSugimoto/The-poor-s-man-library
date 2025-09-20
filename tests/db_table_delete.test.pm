@@ -20,7 +20,7 @@ for my $i (1..10) {
   });
 }
 my $all = [];
-$all = $db->select("table1")->all();
+$all = $db->from("table1")->all();
 pm_test_util::assert_equals(10, $all->size(), "Number of records is not correct");
 my $v = $table1
   ->where(sub {$_[0]->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} == 2})
@@ -28,7 +28,7 @@ my $v = $table1
 $table1->delete($v);
 $all = $table1->all();
 pm_test_util::assert_equals(9, $all->size(), "Record not deleted in memory");
-$all = $db->select("table1")->all();
+$all = $db->from("table1")->all();
 pm_test_util::assert_equals(9, $all->size(), "Record not deleted on disk");
 $db->delete();
 pm_test_util::assert_false(-d $db_folder, "Failed to delete db");

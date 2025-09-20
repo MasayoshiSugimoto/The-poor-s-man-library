@@ -30,7 +30,7 @@ $v1 = $table1
 pm_test_util::assert_equals(1, $v1->{x}, "x is incorrect");
 pm_test_util::assert_equals(2, $v1->{y}, "y is incorrect");
 $v1 = $db
-  ->select("table1")
+  ->from("table1")
   ->where(sub {$_[0]->{x} > 0})
   ->first();
 pm_test_util::assert_equals(1, $v1->{x}, "x is incorrect");

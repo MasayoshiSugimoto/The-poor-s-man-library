@@ -68,7 +68,7 @@ sub create_table {
 }
 
 
-sub select {
+sub from {
   my ($self, $table_name) = @_;
   pm_db_util::query_log("SELECT $table_name");
   my $path = $self->table_path_get($table_name);
