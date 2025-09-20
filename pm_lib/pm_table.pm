@@ -75,6 +75,7 @@ sub size {
 }
 
 
+# Add a record 
 sub push {
   my ($self, $record) = @_;
   $self->assert_invariant();
@@ -82,9 +83,17 @@ sub push {
   if (ref($record) eq "ARRAY") {
     pm_assert::assert_equals(scalar @$record, $self->{columns}->size(), "Record size is incorrect");
     push(@{$self->{data}}, $record);
-  } else {
+  } elsif (ref($record) eq "pm_list"){
     pm_assert::assert_equals($record->size(), $self->{columns}->size(), "Record size is incorrect");
     push(@{$self->{data}}, $record->as_array());
+  } elsif (ref($record) eq "HASH") {
+    my @l = ();
+    $self->{columns}->for_each(sub {
+      push(@l, $record->{$_[0]});
+    });
+    CORE::push(@{$self->{data}}, \@l);
+  } else {
+    die pm_log::exception("You can only push a record as an array or a list");
   }
 }
 
