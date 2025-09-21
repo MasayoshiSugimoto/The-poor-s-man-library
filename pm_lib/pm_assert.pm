@@ -23,7 +23,12 @@ sub assert_equals {
 
 sub assert_true {
   my ($condition, $text) = @_;
-  $condition or die pm_log::exception("");
+  if (!$condition) {
+    if (!defined $text) {
+      $text = "Condition is false";
+    }
+    die pm_log::exception("$text");
+  }
 }
 
 

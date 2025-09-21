@@ -10,14 +10,21 @@ use constant {
 sub new {
   my ($class, $array) = @_;
   my $self;
-  if (defined $array) {
-    $self = {
-      data => $array
-    };
-  } else {
+  if (!defined $array) {
     $self = {
       data => []
     };
+  } elsif (ref($array) eq "ARRAY") {
+    $self = {
+      data => $array
+    };
+  } elsif (ref($array) eq "pm_list") {
+    $self = {
+      data => $array->as_array()
+    };
+  } else {
+    my $ref = ref($array);
+    die pm_log::exception("Invalid data type: $array");
   }
   bless $self, $class;
   return $self;

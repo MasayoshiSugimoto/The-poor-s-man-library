@@ -72,17 +72,32 @@ sub as_text {
     my $result = "[";
     my $first = true;
     for my $i (@$x) {
+      my $value = as_text($i);
       if ($first) {
-        $result .= $i;
+        $result .= $value;
         $first = false;
       } else {
-        $result .= ",$i";
+        $result .= ",$value";
       }
     }
     $result .= "]";
     return $result;
   }
-  return "$x" if ($refX eq 'HASH');
+  if ($refX eq 'HASH') {
+    my $result = "{";
+    my $first = true;
+    foreach my $key (sort keys %$x) {
+      my $value = as_text($x->{$key});
+      if ($first) {
+        $result .= "$key => $value";
+        $first = false;
+      } else {
+        $result .= ", $key => $value";
+      }
+    }
+    $result .= "}";
+    return $result;
+  }
   return "$x" if ($refX eq 'SCALAR');
   return "$x" if ($refX eq 'CODE');
   return $x->as_text() if ($x->can('as_text'));

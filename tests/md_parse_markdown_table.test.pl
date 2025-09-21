@@ -16,15 +16,15 @@ pm_test_util::assert_equals(["c1", "c2", "c3"], $table->columns_get(), "Invalid 
 pm_test_util::assert_equals(3, $table->size(), "Table size is incorrect");
 pm_test_util::assert_equals(
   {c1 => "Jean", c2 => "Dupond", c3 => "1234567"},
-  $table->get(0)
+  $table->row_get(0)
 );
 pm_test_util::assert_equals(
   {c1 => "Michel", c2 => "Durand", c3 => "2345678"},
-  $table->get(1)
+  $table->row_get(1)
 );
 pm_test_util::assert_equals(
   {c1 => "Giselle", c2 => "Proust", c3 => "3456789"},
-  $table->get(2)
+  $table->row_get(2)
 );
 
 

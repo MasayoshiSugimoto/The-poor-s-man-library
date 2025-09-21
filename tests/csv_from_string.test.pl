@@ -21,7 +21,7 @@ pm_assert::assert_equals(
     'Last Name' => 'Dupond',
     'Tel' => 1234567
   },
-  $csv->get(0),
+  $csv->row_get(0),
   "Jean Dupon"
 );
 pm_assert::assert_equals(
@@ -30,7 +30,7 @@ pm_assert::assert_equals(
     'Last Name' => 'Durand',
     'Tel' => 2345678
   },
-  $csv->get(1),
+  $csv->row_get(1),
   "Michel Durand"
 );
 pm_assert::assert_equals(
@@ -39,7 +39,7 @@ pm_assert::assert_equals(
     'Last Name' => 'Proust',
     'Tel' => 3456789
   },
-  $csv->get(2),
+  $csv->row_get(2),
   "Giselle Proust"
 );
 
@@ -59,7 +59,7 @@ pm_assert::assert_equals(
     'c1' => 'Dupond',
     'c2' => 1234567
   },
-  $csv->get(0),
+  $csv->row_get(0),
   "Jean Dupon"
 );
 pm_assert::assert_equals(
@@ -68,7 +68,7 @@ pm_assert::assert_equals(
     'c1' => 'Durand',
     'c2' => 2345678
   },
-  $csv->get(1),
+  $csv->row_get(1),
   "Michel Durand"
 );
 pm_assert::assert_equals(
@@ -77,7 +77,7 @@ pm_assert::assert_equals(
     'c1' => 'Proust',
     'c2' => 3456789
   },
-  $csv->get(2),
+  $csv->row_get(2),
   "Giselle Proust"
 );
 
@@ -97,7 +97,7 @@ pm_assert::assert_equals(
     'c1' => 'Dupond',
     'c2' => 1234567
   },
-  $csv->get(0),
+  $csv->row_get(0),
   "Jean Dupon"
 );
 pm_assert::assert_equals(
@@ -106,7 +106,7 @@ pm_assert::assert_equals(
     'c1' => 'Durand',
     'c2' => 2345678
   },
-  $csv->get(1),
+  $csv->row_get(1),
   "Michel Durand"
 );
 pm_assert::assert_equals(
@@ -115,7 +115,7 @@ pm_assert::assert_equals(
     'c1' => 'Proust',
     'c2' => 3456789
   },
-  $csv->get(2),
+  $csv->row_get(2),
   "Giselle Proust"
 );
 pm_log::separator();

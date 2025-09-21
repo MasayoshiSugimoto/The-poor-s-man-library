@@ -55,8 +55,10 @@ sub delete {
 
 
 sub create_table {
-  my ($self, $table_name) = @_;
+  my ($self, $table_name, $columns) = @_;
   pm_log::debug("Creating table: $table_name");
+  pm_assert::assert_defined($table_name, "table_name");
+  pm_assert::assert_defined($columns, "columns");
   my $path = $self->table_path_get($table_name);
   if (-d $path) {
     pm_log::debug("Table already exist. Skipping creation.");
@@ -64,18 +66,29 @@ sub create_table {
     mkdir $path;
     pm_log::info("Table created at $path");
   }
-  my $table = pm_db_table->new($self, $table_name);
+  if (!grep {$_ eq $pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} @$columns) {
+    push(@$columns, $pm_constants::DB_TABLE_PRIMARY_KEY_FIELD);
+  }
+  my $table = pm_db_table->new($self, $table_name, $columns);
 }
 
 
 sub from {
   my ($self, $table_name) = @_;
-  pm_db_util::query_log("SELECT $table_name");
+  pm_db_util::query_log("FROM $table_name");
   my $path = $self->table_path_get($table_name);
-  if (!-d $path) {
-    die pm_log::exception("Table does not exist: $path");
+  # TODO: Replace by some metadata
+  opendir(my $dh, $path) or die "table does not exist: $path $!";
+  my @files = grep { -f "$path/$_" } readdir($dh);
+  my @columns = ();
+  if (scalar @files > 0) {
+    my $sample = pm_ini::ini_file_load("$path/$files[0]");
+    foreach my $key (sort keys %$sample) {
+      push(@columns, $key);
+    }
   }
-  return pm_db_table->new($self, $table_name);
+  closedir($dh);
+  return pm_db_table->new($self, $table_name, \@columns);
 }
 
 

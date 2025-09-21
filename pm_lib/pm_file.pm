@@ -1,6 +1,7 @@
 package pm_file;
 use strict;
 use warnings;
+use File::Path qw(remove_tree);
 
 
 sub file_delete {
@@ -46,6 +47,13 @@ sub file_save_string {
   print $fh $content;
   close $fh;
   pm_log::debug("File saved: file_path=$file_path");
+}
+
+
+sub directory_delete {
+  my ($folder) = @_;
+  pm_log::debug("Deleting folder: $folder");
+  remove_tree($folder) or warn "Could not delete $folder: $!";
 }
 
 

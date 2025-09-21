@@ -8,6 +8,7 @@ use Data::Dumper;
 use pm_include_test;
 
 
+pm_file::directory_delete($pm_test_util::TEST_DIRECTORY);
 my $test_dir_path = "tests";
 opendir(my $test_dir, $test_dir_path)
   or die pm_log::exception("Cannot open $test_dir_path $!");

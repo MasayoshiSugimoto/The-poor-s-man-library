@@ -11,9 +11,9 @@ my $db_folder = "$pm_test_util::TEST_DIRECTORY/db_table_where.test";
 my $db = pm_db->new($db_folder);
 $db->allocate();
 pm_test_util::assert_true(-d $db_folder, "Failed to create db");
-my $table1 = $db->create_table("table1");
+my $table1 = $db->create_table("table1", ["x", "y"]);
 pm_test_util::assert_true(-d "$db_folder/table1", "Failed to create table1");
-my $table2 = $db->create_table("table2");
+my $table2 = $db->create_table("table2", ["x", "y"]);
 pm_test_util::assert_true(-d "$db_folder/table2", "Failed to create table2");
 for my $i (1..4) {
   $table1->insert({
@@ -22,8 +22,8 @@ for my $i (1..4) {
   });
 }
 my $v = $table1
-  ->where(sub {$_[0]->{x} % 2 == 0})
-  ->where(sub {$_[0]->{x} > 3})
+  ->where(sub {$_[0]->get("x") % 2 == 0})
+  ->where(sub {$_[0]->get("x") > 3})
   ->first();
 pm_test_util::assert_equals(4, $v->{x}, "x is incorrect");
 pm_test_util::assert_equals(40, $v->{y}, "y is incorrect");

@@ -10,9 +10,10 @@ package pm_table;
 sub new {
   pm_log::debug("Creating table");
   my ($class, $columns, $data) = @_;
-  die pm_log::exception("data not defined") if (!defined $data);
+  defined $data or $data = [];
   die pm_log::exception("data not an array") if (ref($data) ne "ARRAY");
   if (!defined $columns) {
+    pm_log::debug("Columns not defined. Generating default columns.");
     $columns = pm_list->new();
     my $A = 65;
     for (my $i = 0; $i < scalar @{$data->[0]}; $i++) {
@@ -63,17 +64,23 @@ sub filter {
 }
 
 
+sub where {
+  my ($self, $f_filter) = @_;
+  return $self->filter($f_filter);
+}
+
+
 sub first {
   my ($self) = @_;
   $self->assert_invariant();
   if ($self->size() == 0) {
     return undef;
   }
-  return $self->get(0);
+  return $self->row_get(0)->as_hash();
 }
 
 
-sub get {
+sub row_get {
   my ($self, $index) = @_;
   $self->assert_invariant();
   my $size = $self->size();
@@ -105,7 +112,19 @@ sub push {
   } elsif (ref($record) eq "HASH") {
     my @l = ();
     $self->{columns}->for_each(sub {
-      push(@l, $record->{$_[0]});
+      my ($column) = @_;
+      my $field = $record->{$column};
+      pm_assert::assert_defined($field, "field $column cannot be undef.");
+      push(@l, $field);
+    });
+    CORE::push(@{$self->{data}}, \@l);
+  } elsif (ref($record) eq "pm_table_record") {
+    my @l = ();
+    $self->{columns}->for_each(sub {
+      my ($column) = @_;
+      my $field = $record->get($column);
+      pm_assert::assert_defined($field, "field $column cannot be undef.");
+      push(@l, $field);
     });
     CORE::push(@{$self->{data}}, \@l);
   } else {
@@ -119,7 +138,8 @@ sub assert_invariant {
   pm_assert::assert_defined($self->{columns}, "Null columns");
   pm_assert::assert_defined($self->{data}, "Null data");
   my $size = $self->{columns}->size();
-  if ($size > 0) {
+  my $height = @{$self->{data}};
+  if ($size > 0 && $height > 0) {
     pm_assert::assert_equals($size, scalar @{$self->{data}->[0]}, "Inconsistent size");
   }
 }
