@@ -85,18 +85,18 @@ sub as_text {
     return $result;
   }
   if ($refX eq 'HASH') {
-    my $result = "{";
+    my $result = "{\n";
     my $first = true;
     foreach my $key (sort keys %$x) {
-      my $value = as_text($x->{$key});
+      my $value = as_text($x->{$key}, "  $indent");
       if ($first) {
-        $result .= "$key => $value";
+        $result .= "$indent  $key => $value";
         $first = false;
       } else {
-        $result .= ", $key => $value";
+        $result .= ",\n$indent  $key => $value";
       }
     }
-    $result .= "}";
+    $result .= "\n$indent}";
     return $result;
   }
   return "$x" if ($refX eq 'SCALAR');

@@ -70,7 +70,10 @@ sub render_list_selection {
 #     }
 #   ],
 #   components => [
-#     ["A", "B", "G", "F"]
+#     {
+#       rectangle => ["A", "B", "G", "F"],
+#       anchor => "menu"
+#     }
 #   ]
 # }
 
@@ -101,6 +104,7 @@ sub layout_parse {
       my $letter = $matrix[$y][$x];
       if ($letter =~ /[A-Z]/) {
         pm_log::debug("vertice:{letter=$letter, x=$x, y=$y}");
+        !defined $vertices{$letter} or die pm_log::exception("Duplicate letter: $letter");
         $vertices{$letter} = {
           letter => $letter,
           x => $x,
@@ -111,7 +115,7 @@ sub layout_parse {
   }
   # Extract segments
   my @segments = ();
-  foreach my $letter1 (keys %vertices) {
+  foreach my $letter1 (sort keys %vertices) {
     my %vertice = %{$vertices{$letter1}};
     my $border;
     for (my $x = $vertice{x} + 1; $x < $width; $x++) {
@@ -161,54 +165,81 @@ sub layout_parse {
   # Create segment index
   my %segments_by_vertex = ();
   foreach my $segment (@segments) {
-    my ($l1, $l2) = $segment->{vertices};
+    my ($l1, $l2) = @{$segment->{vertices}};
     pm_hash::multi_hash_push(\%segments_by_vertex, $l1, $segment);
     pm_hash::multi_hash_push(\%segments_by_vertex, $l2, $segment);
   }
   # Extract components
-  my @queue = ();
-  foreach my $letter1 (keys %vertices) {
-    my $vertice = $vertices{$letter1};
+  my @components = ();
+  foreach my $letter (sort keys %vertices) {
+    my $rectangle = component_extract(\%vertices, \@segments, $letter);
+    next if (!defined $rectangle);
+    my $rectangle_as_text = join "", @$rectangle;
+    pm_log::debug("rectangle=$rectangle_as_text");
+    push(@components, {
+      rectangle => $rectangle,
+      anchor => component_extract_anchor(\@matrix, \%vertices, $rectangle)
+    });
   }
+
+  return {
+    vertices => \%vertices,
+    segments => \@segments,
+    components => \@components
+  };
 }
 
 
 sub component_extract {
-  my ($vertices, $segments, $vertex_letter) = @_;
+  my ($vertices, $segments, $top_left) = @_;
+  pm_log::debug("Searching component with left corner: $top_left");
+
+  sub component_from_state {
+    my ($state) = @_;
+    my @states = ();
+    while (defined $state) {
+      push(@states, $state);
+      $state = $state->{previous};
+    }
+    my @result = ($states[0]->{letter});
+    for (my $i = 1; $i < scalar @states; $i++) {
+      if ($states[$i-1]->{direction} ne $states[$i]->{direction}) {
+        push(@result, $states[$i]->{letter});
+      }
+    }
+    @result = reverse @result;
+    return \@result;
+  }
+
   # Create segment index
   my %segments_by_vertex = ();
   foreach my $segment (@$segments) {
-    my ($l1, $l2) = $segment->{vertices};
+    my ($l1, $l2) = @{$segment->{vertices}};
     pm_hash::multi_hash_push(\%segments_by_vertex, $l1, $segment);
     pm_hash::multi_hash_push(\%segments_by_vertex, $l2, $segment);
   }
   my @queue = ({
-    letter => $vertex_letter,
+    letter => $top_left,
     direction => "",
-    previous => undef
+    previous => undef,
     length => 0
   });
-  my @path = ();
-  my %visited = ();
+  my $min_length = 9999999999;
+  my $component;
   while (scalar @queue > 0) {
     my $state = shift(@queue);
     my $letter1 = $state->{letter};
+    my $p1 = $vertices->{$letter1};
     my $direction = $state->{direction};
-    foreach my $segment (@{$segments_by_vertex{$letter}}) {
+    foreach my $segment (@{$segments_by_vertex{$letter1}}) {
       my $letter2 = segment_other_get($segment, $letter1);
-      pm_log::debug("letter2=$letter2");
-      my $p1 = $vertices->{$letter1};
       my $p2 = $vertices->{$letter2};
       my $new_direction;
-      if ($p1->{x} < $p2->{x}) {
-        $new_direction = "right";
-      } elsif ($p1->{y} > $p2->{y}) {
-        $new_direction = "down";
-      } elsif ($p1->{x} > $p2->{x}) {
-        $new_direction = "left";
-      } elsif ($p1->{y} < $ps->{y}) {
-        $new_direction = "up";
-      }
+      if ($p1->{x} < $p2->{x}) { $new_direction = "right"; }
+      elsif ($p1->{y} < $p2->{y}) { $new_direction = "down"; }
+      elsif ($p1->{x} > $p2->{x}) { $new_direction = "left"; }
+      elsif ($p1->{y} > $p2->{y}) { $new_direction = "up"; }
+      pm_log::debug("letter1=$letter1, letter2=$letter2, direction=$direction, new_direction=$new_direction");
       # Acceptable transitions
       next if (!(
         $direction eq $new_direction
@@ -217,21 +248,29 @@ sub component_extract {
         || $direction eq "down" && $new_direction eq "left"
         || $direction eq "left" && $new_direction eq "up"
       ));
-      if ($letter2 == $vertex_letter) {
-        pm_log::debug("Component found");
+      pm_log::debug("Acceptable transition");
+      if ($letter2 eq $top_left) {
+        my $c = component_from_state($state);
+        my $c_as_text = join("", @$c);
+        pm_log::debug("Component found: $c_as_text");
+        if ($state->{length} < $min_length) {
+          pm_log::debug("Smaller component -> retaining.");
+          $min_length = $state->{length};
+          $component = $c;
+        }
         last;
       }
       my $new_length = $state->{length} + segment_length_get($vertices, $segment);
-      next if ($new_length >= $visited{$letter2});
-      $visited{$letter2} = $new_length;
-      pm_log::debug("push: letter1=$letter1, letter2=$letter2, direction=$new_direction");
+      pm_log::debug("push: letter=$letter2, direction=$new_direction, length=$new_length");
       push(@queue, {
         letter => $letter2,
         direction => $new_direction,
-        previous => $letter1
+        previous => $state,
+        length => $new_length
       });
     }
   }
+  return $component;
 }
 
 
@@ -250,7 +289,7 @@ sub segment_other_get {
 
 sub segment_length_get {
   my ($vertices, $segment) = @_;
-  my ($letter1, $letter2) = $segment->{vertices};
+  my ($letter1, $letter2) = @{$segment->{vertices}};
   my %v1 = %{$vertices->{$letter1}};
   my %v2 = %{$vertices->{$letter2}};
   if ($v1{x} == $v2{x}) {
@@ -258,6 +297,35 @@ sub segment_length_get {
   } elsif ($v1{y} == $v1{y}) {
     return abs($v1{x} - $v2{x});
   }
+}
+
+
+sub component_extract_anchor {
+  my ($matrix, $vertices_ref, $rectangle_ref) = @_;
+  my %vertices = %$vertices_ref;
+  my @rectangle = @$rectangle_ref;
+  my %top_left = %{$vertices{$rectangle[0]}};
+  my %top_right = %{$vertices{$rectangle[1]}};
+  my %bottom_right = %{$vertices{$rectangle[2]}};
+  my %bottom_left = %{$vertices{$rectangle[3]}};
+  my $top = $top_left{y};
+  my $right = $top_right{x};
+  my $bottom = $bottom_left{y};
+  my $left = $bottom_left{x};
+  my $anchor = "";
+  pm_log::debug("top=$top right=$right bottom=$bottom left=$left");
+  for (my $y = $top + 1; $y < $bottom; $y++) {
+    for (my $x = $left + 1; $x < $right; $x++) {
+      my $letter = $matrix->[$y][$x];
+      if ($letter =~ /[a-z]/) {
+        $anchor .= $letter;
+      } elsif (length($anchor) > 0) {
+        last;  # We already reached the end of the anchor
+      }
+    }
+  }
+  pm_log::debug("anchor=$anchor");
+  return $anchor;
 }
 
 
