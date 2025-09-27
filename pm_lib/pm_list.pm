@@ -56,8 +56,8 @@ sub filter {
 sub for_each {
   my ($self, $f) = @_;
   my @result = ();
-  foreach my $x (@{$self->{data}}) {
-    $f->($x);
+  for (my $i = 0; $i < scalar @{$self->{data}}; $i++) {
+    $f->($self->{data}->[$i], $i);
   }
 }
 

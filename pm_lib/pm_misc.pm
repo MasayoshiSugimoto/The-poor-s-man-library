@@ -65,22 +65,23 @@ sub normalize {
 
 
 sub as_text {
-  my ($x) = @_;
+  my ($x, $indent) = @_;
+  $indent = "" if (!defined $indent);
   return "undef" if (!defined $x);
   my $refX = ref($x);
   if ($refX eq 'ARRAY') {
-    my $result = "[";
+    my $result = "[\n";
     my $first = true;
     for my $i (@$x) {
-      my $value = as_text($i);
+      my $value = as_text($i, "  $indent");
       if ($first) {
-        $result .= $value;
+        $result .= "$indent  $value";
         $first = false;
       } else {
-        $result .= ",$value";
+        $result .= ",\n$indent  $value";
       }
     }
-    $result .= "]";
+    $result .= "\n$indent]";
     return $result;
   }
   if ($refX eq 'HASH') {

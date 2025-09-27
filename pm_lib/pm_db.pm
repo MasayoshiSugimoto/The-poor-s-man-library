@@ -110,4 +110,10 @@ sub id_generate {
 }
 
 
+sub is_allocated {
+  my ($self) = @_;
+  return -d $self->{path};
+}
+
+
 1;

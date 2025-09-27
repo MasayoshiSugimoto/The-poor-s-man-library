@@ -33,6 +33,14 @@ sub error {
 }
 
 
+sub fatal {
+  my ($text) = @_;
+  $text = "" if (!defined $text);
+  print STDERR "${pm_color::RED}FATAL|$text${pm_color::RESET}\n";
+  exit 1;
+}
+
+
 sub exception {
   my ($text) = @_;
   $text = "" if (!defined $text);

@@ -75,4 +75,19 @@ sub right_pad {
 }
 
 
+sub trim {
+  my ($string) = @_;
+  $string =~ s/^\s+//;
+  $string =~ s/\s+$//;
+  return $string;
+}
+
+
+sub as_linux_string {
+  my ($string) = @_;
+  $string =~ s/\r//g;
+  return $string;
+}
+
+
 1;

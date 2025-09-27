@@ -28,6 +28,9 @@ use pm_table;
 use pm_assert;
 use pm_misc;
 use pm_md;
+use pm_console;
+use pm_ui;
+use pm_hash;
 
 
 1;

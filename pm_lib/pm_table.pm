@@ -51,6 +51,22 @@ sub from_data_with_header {
 }
 
 
+sub select {
+  my ($self, $columns) = @_;
+  defined $columns or die pm_log::exception("columns must be defined");
+  my @data = ();
+  foreach my $row (@{$self->{data}}) {
+    my @select_row = ();
+    foreach my $column (@$columns) {
+      my $index = $self->{columns}->index_get($column);
+      push(@select_row, $row->[$index]);
+    }
+    push(@data, \@select_row);
+  }
+  return pm_table->new($columns, \@data);
+}
+
+
 sub filter {
   my ($self, $f_filter) = @_;
   $self->assert_invariant();
