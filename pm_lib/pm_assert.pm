@@ -14,9 +14,9 @@ sub assert_defined {
 
 
 sub assert_equals {
-  my ($a, $b, $text) = @_;
-  if (!pm_misc::equals($a, $b)) {
-    die pm_log::exception("Values are different: $text. a=$a, b=$b");
+  my ($expected, $actual, $text) = @_;
+  if (!pm_misc::equals($expected, $actual)) {
+    die pm_log::exception("Values are different. $text: expected=$expected, actual=$actual");
   }
 }
 

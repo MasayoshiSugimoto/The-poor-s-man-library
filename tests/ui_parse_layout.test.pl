@@ -16,7 +16,12 @@ F--------G------------------H
 EOF
 
 
-my $layout_blue_print = pm_ui::layout_parse($layout);
+my $layout_blue_print = pm_layout::layout_parse($layout);
+pm_layout::layout_render($layout_blue_print, {
+  menu => "a\nb\nc\nd",
+  title => "TASKS",
+  content => "Go to the super market"
+});
 my $expected_vertices = {
   A => {letter => "A", x => 0, y => 0},
   B => {letter => "B", x => 9, y => 0},

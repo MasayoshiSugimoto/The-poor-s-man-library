@@ -7,6 +7,33 @@ use constant {
 };
 
 
+sub buffer_char_write {
+  my ($buffer, $char, $x, $y) = @_;
+  pm_log::debug("Printing in buffer: char=$char x=$x y=$y");
+  my $height = @{$buffer};
+  die pm_log::exception("Empty buffer") if ($height == 0);
+  my $width = @{$buffer->[0]};
+  pm_log::debug("Buffer size: width=$width height=$height");
+  if (!(0 <= $x && $x < $width && 0 <= $y && $y < $height)) {
+    die pm_log::exception("Attempt to write outside of the buffer: x=$x y=$y width=$width height=$height");
+  }
+  $buffer->[$y][$x] = $char;
+}
+
+
+sub buffer_render {
+  my ($buffer) = @_;
+  pm_log::debug("Rendering buffer");
+  my $height = @{$buffer};
+  my $width = @{$buffer->[0]};
+  for (my $y = 0; $y < $height; $y++) {
+    for (my $x = 0; $x < $width; $x++) {
+      print($buffer->[$y]->[$x]);
+    }
+  }
+}
+
+
 sub render_list_selection {
   my ($list, $selected) = @_;
   $selected = 0 if !defined $selected;
@@ -19,6 +46,101 @@ sub render_list_selection {
     }
   });
 }
+
+
+package pm_component;
+
+
+sub new {
+  my ($class, $layout, $index) = @_;
+  pm_log::debug("Creating component: index=$index");
+  my $component = $layout->{components}->[$index];
+  my $rectangle = $component->{rectangle};
+  pm_assert::assert_equals(4, scalar @$rectangle, "Rectangle must have 4 vertices");
+  my $vertex_by_letter = $layout->{vertices};
+  my $top = $vertex_by_letter->{$rectangle->[0]}->{y};
+  my $right = $vertex_by_letter->{$rectangle->[2]}->{x};
+  my $bottom = $vertex_by_letter->{$rectangle->[2]}->{y};
+  my $left = $vertex_by_letter->{$rectangle->[0]}->{x};
+  pm_log::debug("top=$top right=$right bottom=$bottom left=$left");
+  my $width = $right - $left;
+  my $height = $bottom - $top;
+  my $offset = {
+    x => $left,
+    y => $top
+  };
+  pm_log::debug("Creating component. width=$width height=$height offset=$offset");
+  my $self = {
+    layout => $layout,
+    index => $index,
+    width => $width,
+    height => $height,
+    offset => $offset,
+  };
+  bless $self, $class;
+  return $self;
+}
+
+
+sub string_render {
+  my ($self, $string, $buffer) = @_;
+  pm_log::debug("pm_content->string_write($string)");
+  my $width = $self->{width};
+  my $height = $self->{height};
+  my $offset = $self->{offset};
+  my $x = 1;
+  my $y = 1;
+  foreach my $char (split("", $string)) {
+    if ($char eq "\n") {
+      $x = 1;
+      $y++;
+      next;
+    }
+    if ($x >= $width - 1) {  # New line
+      $x = 1;
+      $y++;
+    }
+    if (!$self->is_inside_relative($x, $y)) {
+      last;
+    }
+    my $x_abs = $x + $offset->{x};
+    my $y_abs = $y + $offset->{y};
+    pm_ui::buffer_char_write($buffer, $char, $x_abs, $y_abs);
+    $x++;
+  }
+}
+
+
+sub component_get {
+  my ($self) = @_;
+  return $self->{layout}->{components}->[$self->{index}];
+}
+
+
+sub anchor_get {
+  my ($self) = @_;
+  return $self->component_get()->{anchor};
+}
+
+
+sub is_inside_absolute {
+  my ($self, $x, $y) = @_;
+  my $offset = $self->{offset};
+  $x = $x - $offset->{x};
+  $y = $y - $offset->{y};
+  return $self->is_inside_relative($x, $y);
+}
+
+
+sub is_inside_relative {
+  my ($self, $x, $y) = @_;
+  my $offset = $self->{offset};
+  return 0 < $x && $x < $self->{width} - 1 && 0 < $y && $y < $self->{height};
+}
+
+
+package pm_layout;
+
 
 # Sample spec for a UI definition language.
 #
@@ -76,6 +198,29 @@ sub render_list_selection {
 #     }
 #   ]
 # }
+
+
+sub new {
+  my ($class, $layout_as_string) = @_;
+  pm_log::debug("Creating layout");
+  my $self = layout_parse($layout_as_string);
+  bless $self, $class;
+  return $self;
+}
+
+
+sub solve {
+  my ($self) = @_;
+  pm_log::debug("Solving UI constraints");
+  return $self;
+}
+
+
+sub render {
+  my ($self) = @_;
+  pm_log::debug("Rendering UI layout");
+}
+
 
 sub layout_parse {
   my ($layout_as_string) = @_;
@@ -187,6 +332,79 @@ sub layout_parse {
     segments => \@segments,
     components => \@components
   };
+}
+
+
+sub layout_constraint_solve {
+  my ($layout_blue_print) = @_;
+  pm_log::debug("Solve layout constraints.");
+}
+
+
+sub layout_render {
+  my ($layout, $content) = @_;
+  pm_log::debug("Render layout.");
+  my $content_as_text = pm_misc::as_text($content);
+  pm_log::debug("content=$content_as_text");
+  my $terminal_size = pm_console::size_get();
+  my $width = $terminal_size->{x};
+  my $height = $terminal_size->{y};
+  pm_log::debug("Terminal size: width=$width height=$height");
+  # Creating screen buffer
+  my @buffer = ();
+  for (my $y = 0; $y < $height; $y++) {
+    my @row = ();
+    for (my $x = 0; $x < $width; $x++) {
+      push(@row, " ");
+    }
+    push(@buffer, \@row);
+  }
+  # Rendering components in order
+  for (my $i = 0; $i < scalar @{$layout->{components}}; $i++) {
+    my $component = pm_component->new($layout, $i);
+    $component->string_render($content->{$component->anchor_get()}, \@buffer);
+  }
+  # Rendering borders
+  my $vertice_by_letter = $layout->{vertices};
+  foreach my $segment (@{$layout->{segments}}) {
+    my $vertices = $segment->{vertices};
+    my $p1 = $vertice_by_letter->{$vertices->[0]};
+    my $p2 = $vertice_by_letter->{$vertices->[1]};
+    if ($segment->{border} eq "-") {
+      my $start;
+      my $end;
+      my $y = $p1->{y};
+      if ($p1->{x} < $p2->{x}) {
+        $start = $p1->{x};
+        $end = $p2->{x};
+      } else {
+        $start = $p2->{x};
+        $end = $p1->{x};
+      }
+      for (my $x = $start + 1; $x < $end; $x++) {
+        pm_ui::buffer_char_write(\@buffer, "-", $x, $y);
+      }
+    } elsif ($segment->{border} eq "|") {
+      my $start;
+      my $end;
+      my $x = $p1->{x};
+      if ($p1->{y} < $p2->{y}) {
+        $start = $p1->{y};
+        $end = $p2->{y};
+      } else {
+        $start = $p2->{y};
+        $end = $p1->{y};
+      }
+      for (my $y = $start + 1; $y < $end; $y++) {
+        pm_ui::buffer_char_write(\@buffer, "|", $x, $y);
+      }
+    } elsif ($segment->{border} eq ".") {
+      # Do nothing
+    } else {
+      die pm_log::exception("Invalid border: border=$segment->{border}");
+    }
+  }
+  pm_ui::buffer_render(\@buffer);
 }
 
 
