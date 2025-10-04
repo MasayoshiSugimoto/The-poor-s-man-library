@@ -141,32 +141,12 @@ sub is_inside_relative {
 
 package pm_layout;
 
+use constant {
+  true => 1,
+  false => 0
+};
 
-# Sample spec for a UI definition language.
-#
-# A---------------------------B
-# |         title             |
-# C---------------------------D
-# | text                      |
-# |                           |
-# E---------------------------F
-#
-# constraints = {
-#   size => {
-#     width => "100u",
-#     height => "100u"
-#   },
-#   ABCD => {
-#     vertical_alignment => "center",
-#     size => {
-#       height: 3  # Number of rows (Without borders)
-#     }
-#   },
-#   CDEF => {
-#     overflow => false
-#   }
-# }
-#
+
 # Another example:
 #
 # A--------B------------------C
@@ -201,28 +181,59 @@ package pm_layout;
 
 
 sub new {
-  my ($class, $layout_as_string) = @_;
+  my ($class, $layout) = @_;
   pm_log::debug("Creating layout");
-  my $self = layout_parse($layout_as_string);
+  my $self = $layout;
   bless $self, $class;
   return $self;
 }
 
 
+# Sample of constraints
+#
+# A---------------------------B
+# |         title             |
+# C---------------------------D
+# | text                      |
+# |                           |
+# E---------------------------F
+#
+# constraints = {
+#   size => {
+#     width => "100%",
+#     height => "100%"
+#   },
+#   ABCD => {
+#     vertical_alignment => "center",
+#     size => {
+#       height: 3  # Number of rows (Without borders)
+#     }
+#   },
+#   CDEF => {
+#     overflow => false
+#   }
+# }
+#
 sub solve {
-  my ($self) = @_;
+  my ($self, $contraints) = @_;
   pm_log::debug("Solving UI constraints");
   return $self;
 }
 
 
-sub render {
+sub segments_by_vertex_get {
   my ($self) = @_;
-  pm_log::debug("Rendering UI layout");
+  my %segments_by_vertex = ();
+  foreach my $segment (@{$self->{segments}}) {
+    my ($l1, $l2) = @{$segment->{vertices}};
+    pm_hash::multi_hash_push(\%segments_by_vertex, $l1, $segment);
+    pm_hash::multi_hash_push(\%segments_by_vertex, $l2, $segment);
+  }
+  return \%segments_by_vertex;
 }
 
 
-sub layout_parse {
+sub from_string {
   my ($layout_as_string) = @_;
   my @lines = split("\n", $layout_as_string, -1);
   my $width;
@@ -327,11 +338,11 @@ sub layout_parse {
     });
   }
 
-  return {
+  pm_layout->new({
     vertices => \%vertices,
     segments => \@segments,
     components => \@components
-  };
+  });
 }
 
 
@@ -341,9 +352,10 @@ sub layout_constraint_solve {
 }
 
 
-sub layout_render {
-  my ($layout, $content) = @_;
+sub render {
+  my ($self, $content) = @_;
   pm_log::debug("Render layout.");
+  my $layout = $self;
   my $content_as_text = pm_misc::as_text($content);
   pm_log::debug("content=$content_as_text");
   my $terminal_size = pm_console::size_get();
@@ -382,7 +394,7 @@ sub layout_render {
         $end = $p1->{x};
       }
       for (my $x = $start + 1; $x < $end; $x++) {
-        pm_ui::buffer_char_write(\@buffer, "-", $x, $y);
+        pm_ui::buffer_char_write(\@buffer, "─", $x, $y);
       }
     } elsif ($segment->{border} eq "|") {
       my $start;
@@ -396,13 +408,72 @@ sub layout_render {
         $end = $p1->{y};
       }
       for (my $y = $start + 1; $y < $end; $y++) {
-        pm_ui::buffer_char_write(\@buffer, "|", $x, $y);
+        pm_ui::buffer_char_write(\@buffer, "│", $x, $y);
       }
     } elsif ($segment->{border} eq ".") {
       # Do nothing
     } else {
       die pm_log::exception("Invalid border: border=$segment->{border}");
     }
+  }
+  # Rendering corner
+  pm_log::debug("Rendering corners");
+  my $segments_by_vertex = $self->segments_by_vertex_get();
+  foreach my $letter1 (sort keys %{$layout->{vertices}}) {
+    pm_log::debug("letter1=$letter1");
+    my $v1 = $layout->{vertices}->{$letter1};
+    defined $v1 or die pm_log::exception("V1 should be defined");
+    my $segments = $segments_by_vertex->{$letter1};
+    my $up = false;
+    my $right = false;
+    my $down = false;
+    my $left = false;
+    foreach my $segment (@$segments) {
+      next if ($segment->{border} eq ".");
+      my $letter2 = segment_other_get($segment, $letter1);
+      pm_log::debug("letter2=$letter2");
+      my $v2 = $layout->{vertices}->{$letter2};
+      defined $v2 or die pm_log::exception("V2 should be defined");
+      if ($v1->{x} == $v2->{x} && $v1->{y} < $v2->{y}) {
+        $down = true;
+      } elsif ($v1->{x} == $v2->{x} && $v1->{y} > $v2->{y}) {
+        $up = true;
+      } elsif ($v1->{y} == $v2->{y} && $v1->{x} < $v2->{x}) {
+        $right = true;
+      } elsif ($v1->{y} == $v2->{y} && $v1->{x} > $v2->{x}) {
+        $left = true;
+      } else {
+        die pm_log::exception("Vertex should be aligned");
+      }
+    }
+    pm_log::debug("up=$up right=$right down=$down left=$left");
+    my $corner = " ";
+    if ($up && $right && $down && $left) {
+      $corner = "┼";
+    } elsif ($up && $right && $left) {
+      $corner = "┴";
+    } elsif ($up && $left && $down) {
+      $corner = "┤";
+    } elsif ($up && $right && $down) {
+      $corner = "├";
+    } elsif ($right && $down && $left) {
+      $corner = "┬";
+    } elsif ($up && $right) {
+      $corner = "└";
+    } elsif ($right && $down) {
+      $corner = "┌";
+    } elsif ($down && $left) {
+      $corner = "┐";
+    } elsif ($left && $up) {
+      $corner = "┘";
+    } elsif ($up && $down) {
+      $corner = "│";
+    } elsif ($left && $right) {
+      $corner = "─";
+    } else {
+      die pm_log::exception("Unexpected condition");
+    }
+    pm_ui::buffer_char_write(\@buffer, $corner, $v1->{x}, $v1->{y});
   }
   pm_ui::buffer_render(\@buffer);
 }

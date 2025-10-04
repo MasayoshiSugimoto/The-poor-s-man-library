@@ -4,9 +4,9 @@ use lib 'pm_lib';
 use pm_include_test;
 
 
-my $layout;
+my $layout_as_text;
 
-$layout = <<EOF;
+$layout_as_text = <<EOF;
 A--------B------------------C
 | menu   | title            |
 |        D..................E
@@ -16,8 +16,8 @@ F--------G------------------H
 EOF
 
 
-my $layout_blue_print = pm_layout::layout_parse($layout);
-pm_layout::layout_render($layout_blue_print, {
+my $layout = pm_layout::from_string($layout_as_text);
+$layout->render({
   menu => "a\nb\nc\nd",
   title => "TASKS",
   content => "Go to the super market"
@@ -49,8 +49,8 @@ my $expected_components = [
   {anchor => "title", rectangle => ["B", "C", "E", "D"]},
   {anchor => "content", rectangle => ["D", "E", "H", "G"]},
 ];
-pm_test_util::assert_equals($expected_vertices, $layout_blue_print->{vertices}, "vertices");
-pm_test_util::assert_equals($expected_segments, $layout_blue_print->{segments}, "segments");
-pm_test_util::assert_equals($expected_components, $layout_blue_print->{components}, "components");
+pm_test_util::assert_equals($expected_vertices, $layout->{vertices}, "vertices");
+pm_test_util::assert_equals($expected_segments, $layout->{segments}, "segments");
+pm_test_util::assert_equals($expected_components, $layout->{components}, "components");
 
 
