@@ -17,11 +17,25 @@ EOF
 
 
 my $layout = pm_layout::from_string($layout_as_text);
-$layout->render({
-  menu => "a\nb\nc\nd",
-  title => "TASKS",
-  content => "Go to the super market"
-});
+$layout->solve({
+    size => {
+      width => "100%",  # 100% of the terminal size
+      height => "100%"
+    },
+    ABGF => {
+      width => "20"
+    },
+    BCED => {
+      horizontal_alignment => "center",
+      vertical_alignment => "center",
+      height =>  4  # Number of rows (Without borders)
+    }
+  })
+  ->render({
+    menu => "Task 1\nTask 2\nTask 3\nTask 4",
+    title => "TASKS",
+    content => "Go to the super market"
+  });
 my $expected_vertices = {
   A => {letter => "A", x => 0, y => 0},
   B => {letter => "B", x => 9, y => 0},
