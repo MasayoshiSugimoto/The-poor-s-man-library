@@ -30,6 +30,10 @@ sub buffer_render {
     for (my $x = 0; $x < $width; $x++) {
       print($buffer->[$y]->[$x]);
     }
+    # We print new line in debug mode as we expect the buffer to be smaller than the terminal.
+    if (defined $pm_constants::CONSOLE_SIZE_DEBUG) {
+      print("\n");
+    }
   }
 }
 
@@ -127,6 +131,8 @@ sub new {
 
 sub string_render {
   my ($self, $string, $buffer) = @_;
+  pm_assert::assert_defined($string, "string not defined");
+  pm_assert::assert_defined($string, "buffer not defined");
   pm_log::debug("pm_content->string_write($string)");
   my $width = $self->{width};
   my $height = $self->{height};
@@ -256,7 +262,7 @@ sub new {
 #   ABCD => {
 #     horizontal_alignment => "center",
 #     vertical_alignment => "center",
-#     height => 3  # Number of rows (Without borders)
+#     height => 4  # Number of rows (Border included)
 #   }
 # }
 #
@@ -265,6 +271,8 @@ sub solve {
   pm_log::debug("Solving UI constraints");
   my $total_width = $constraints->{size}->{width};
   my $total_height = $constraints->{size}->{height};
+  pm_log::debug("total_width=$total_width total_height=$total_height");
+  # Normalize constraint for easier access.
   my %normalized_constraints = ();
   foreach my $component (@{$self->{components}}) {
     my $key = pm_ui::array_as_key($component->{rectangle});
@@ -277,26 +285,32 @@ sub solve {
     $normalized_constraints{$key}->{width} = $constraint->{width} if (defined $constraint->{width});
     $normalized_constraints{$key}->{height} = $constraint->{height} if (defined $constraint->{height});
   }
+  # Initialize components.
   my %components = ();
   foreach my $component (@{$self->{components}}) {
     my $key = join("", sort @{$component->{rectangle}});
     $components{$key} = $component;
   }
+  # Count borders.
   my %horizontal_borders = ();
   my %vertical_borders = ();
   foreach my $vertex (values %{$self->{vertices}}) {
     $horizontal_borders{$vertex->{y}} = true;
     $vertical_borders{$vertex->{x}} = true;
   }
+  my $horizontal_borders_count = keys %horizontal_borders;
+  my $vertical_borders_count = keys %vertical_borders;
+  pm_log::debug("horizontal_borders_count=$horizontal_borders_count vertical_borders_count=$vertical_borders_count");
+  # Calculating screen size.
   my $screen_size = pm_console::size_get();
   my $screen_width;
   my $screen_width_constraint = (defined $constraints->{size} && defined $constraints->{size}->{width})
     ? $constraints->{size}->{width}
     : "100%";
   if (pm_ui::constraint_pourcentage_get($screen_width_constraint)) {
-    $screen_width = int(pm_ui::constraint_ratio_get($screen_width_constraint) * ($screen_size->{x} - scalar keys %vertical_borders));
+    $screen_width = int(pm_ui::constraint_ratio_get($screen_width_constraint) * ($screen_size->{x} - $vertical_borders_count));
   } elsif (pm_ui::constraint_unit_get($screen_width_constraint)) {
-    $screen_width = pm_ui::constraint_unit_get($screen_width_constraint) - scalar keys %vertical_borders;
+    $screen_width = pm_ui::constraint_unit_get($screen_width_constraint) - $vertical_borders_count;
   } else {
     die pm_log::exception("Invalid screen width constraint: $screen_width_constraint");
   }
@@ -306,9 +320,9 @@ sub solve {
     ? $constraints->{size}->{height}
     : "100%";
   if (pm_ui::constraint_pourcentage_get($screen_height_constraint)) {
-    $screen_height = int(pm_ui::constraint_ratio_get($screen_height_constraint) * ($screen_size->{y} - scalar keys %horizontal_borders));
+    $screen_height = int(pm_ui::constraint_ratio_get($screen_height_constraint) * ($screen_size->{y} - $horizontal_borders_count));
   } elsif (pm_ui::constraint_unit_get($screen_height_constraint)) {
-    $screen_height = pm_ui::constraint_unit_get($screen_height_constraint);
+    $screen_height = pm_ui::constraint_unit_get($screen_height_constraint) - $horizontal_borders_count;
   } else {
     die pm_log::exception("Invalid screen height constraint: $screen_height_constraint");
   }
@@ -357,6 +371,7 @@ sub solve {
       };
     }
   }
+  # Solve constraints starting from vertex connected to already resolved vertices.
   while (scalar @queue > 0) {
     my $v0 = shift @queue;
     foreach my $segment (@{$self->{segments}}) {
@@ -648,7 +663,7 @@ sub render {
       } elsif ($v1->{y} == $v2->{y} && $v1->{x} > $v2->{x}) {
         $left = true;
       } else {
-        die pm_log::exception("Vertex should be aligned");
+        #die pm_log::exception("Vertex should be aligned");
       }
     }
     pm_log::debug("up=$up right=$right down=$down left=$left");
