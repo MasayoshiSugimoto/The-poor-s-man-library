@@ -6,6 +6,11 @@ use pm_include_test;
 
 $pm_constants::CONSOLE_SIZE_DEBUG = {x => 21, y => 10};
 my $layout_as_text;
+my $layout;
+my $expected_vertices;
+my $expected_segments;
+my $expected_components;
+
 $layout_as_text = <<EOF;
 A--------B------------------C
 | menu   | title            |
@@ -16,7 +21,7 @@ F--------G------------------H
 EOF
 
 
-my $layout = pm_layout::from_string($layout_as_text)
+$layout = pm_layout::from_string($layout_as_text)
   ->solve({
     size => {
       width => "100%",  # 100% of the terminal size
@@ -31,7 +36,7 @@ my $layout = pm_layout::from_string($layout_as_text)
       height =>  3  # Number of rows (Without borders)
     }
   });
-my $expected_vertices = {
+$expected_vertices = {
   A => {letter => "A", x => 0, y => 0},
   B => {letter => "B", x => 9, y => 0},
   C => {letter => "C", x => 20, y => 0},
@@ -41,7 +46,7 @@ my $expected_vertices = {
   G => {letter => "G", x => 9, y => 9},
   H => {letter => "H", x => 20, y => 9},
 };
-my $expected_segments = [
+$expected_segments = [
   {border => "-", vertices => ["A", "B"]},
   {border => "|", vertices => ["A", "F"]},
   {border => "-", vertices => ["B", "C"]},
@@ -53,7 +58,7 @@ my $expected_segments = [
   {border => "-", vertices => ["F", "G"]},
   {border => "-", vertices => ["G", "H"]},
 ];
-my $expected_components = [
+$expected_components = [
   {anchor => "menu", rectangle => ["A", "B", "G", "F"]},
   {anchor => "title", rectangle => ["B", "C", "E", "D"]},
   {anchor => "content", rectangle => ["D", "E", "H", "G"]},
@@ -61,6 +66,9 @@ my $expected_components = [
 pm_test_util::assert_equals($expected_vertices, $layout->{vertices}, "vertices");
 pm_test_util::assert_equals($expected_segments, $layout->{segments}, "segments");
 pm_test_util::assert_equals($expected_components, $layout->{components}, "components");
+
+
+pm_log::separator();
 
 
 $pm_constants::CONSOLE_SIZE_DEBUG = undef;

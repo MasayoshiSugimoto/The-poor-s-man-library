@@ -32,4 +32,10 @@ sub assert_true {
 }
 
 
+sub assert_fail {
+  my ($text) = @_;
+  die pm_log::exception("$text");
+}
+
+
 1;

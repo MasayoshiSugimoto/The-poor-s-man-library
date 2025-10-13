@@ -48,7 +48,7 @@ my $tests = [
 ];
 
 foreach my $test (@$tests) {
-  my $component = pm_ui::component_extract($vertices, $segments, $test->{top_left});
+  my $component = pm_layout::component_extract($vertices, $segments, $test->{top_left});
   pm_test_util::assert_equals($test->{expected}, $component, "A");
 }
 

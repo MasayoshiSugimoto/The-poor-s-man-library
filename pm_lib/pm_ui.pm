@@ -100,23 +100,23 @@ package pm_component;
 
 sub new {
   my ($class, $layout, $index) = @_;
-  pm_log::debug("Creating component: index=$index");
+  pm_log::debug("pm_component->new($index)");
   my $component = $layout->{components}->[$index];
   my $rectangle = $component->{rectangle};
-  pm_assert::assert_equals(4, scalar @$rectangle, "Rectangle must have 4 vertices");
+  my $rectangle_as_text = pm_misc::as_text($rectangle);
+  pm_assert::assert_equals(4, scalar @$rectangle, "Rectangle must have 4 vertices (found $rectangle_as_text)");
   my $vertex_by_letter = $layout->{vertices};
   my $top = $vertex_by_letter->{$rectangle->[0]}->{y};
   my $right = $vertex_by_letter->{$rectangle->[2]}->{x};
   my $bottom = $vertex_by_letter->{$rectangle->[2]}->{y};
   my $left = $vertex_by_letter->{$rectangle->[0]}->{x};
-  pm_log::debug("top=$top right=$right bottom=$bottom left=$left");
   my $width = $right - $left;
   my $height = $bottom - $top;
   my $offset = {
     x => $left,
     y => $top
   };
-  pm_log::debug("Creating component. width=$width height=$height offset=$offset");
+  pm_log::debug("Creating component. width=$width height=$height left=$left top=$top");
   my $self = {
     layout => $layout,
     index => $index,
@@ -169,6 +169,12 @@ sub component_get {
 sub anchor_get {
   my ($self) = @_;
   return $self->component_get()->{anchor};
+}
+
+
+sub rectangle_get {
+  my ($self) = @_;
+  return $self->component_get()->{rectangle};
 }
 
 
@@ -231,9 +237,10 @@ use constant {
 
 sub new {
   my ($class, $layout) = @_;
-  pm_log::debug("Creating layout");
+  pm_log::debug("pm_layout->new()");
   my $self = $layout;
   bless $self, $class;
+  $self->assert();
   return $self;
 }
 
@@ -441,6 +448,20 @@ sub solve {
 }
 
 
+sub size_get {
+  my ($self) = @_;
+  my %vertices = %{$self->{vertices}};
+  my $size = {x => 0, y => 0};
+  foreach my $vertex (values %vertices) {
+    $size->{x} = $vertex->{x} if ($size->{x} < $vertex->{x});
+    $size->{y} = $vertex->{y} if ($size->{y} < $vertex->{y});
+  }
+  $size->{x}++;
+  $size->{y}++;
+  return $size;
+}
+
+
 sub segments_by_vertex_get {
   my ($self) = @_;
   my %segments_by_vertex = ();
@@ -500,6 +521,8 @@ sub from_string {
         $border = ".";
       } elsif (!defined $border && $letter2 eq "-") {
         $border = "-";
+      } elsif (!defined $border && $letter2 =~ /[A-Z]/) {
+        pm_assert::assert_fail("There must be at least one border between vertices.");
       } elsif ($letter2 =~ /[A-Z]/) {
         pm_log::debug("segment:{vertices=[$letter1, $letter2], border=$border}");
         push(@segments, {
@@ -522,7 +545,9 @@ sub from_string {
         $border = ".";
       } elsif (!defined $border && $letter2 eq "|") {
         $border = "|";
-      } elsif ($letter2 =~ /[A-Z]/) {
+      } elsif (!defined $border && $letter2 =~ /[A-Z]/) {
+        pm_assert::assert_fail("There must be at least one border between vertices.");
+      } elsif (defined $border && $letter2 =~ /[A-Z]/) {
         pm_log::debug("segment:{vertices=[$letter1, $letter2], border=$border}");
         push(@segments, {
           vertices => [$letter1, $letter2],
@@ -551,14 +576,15 @@ sub from_string {
     my $rectangle = component_extract(\%vertices, \@segments, $letter);
     next if (!defined $rectangle);
     my $rectangle_as_text = join "", @$rectangle;
+    pm_assert::assert_true(scalar @$rectangle == 4, "Rectangle must have 4 vertices. Found $rectangle_as_text");
     pm_log::debug("rectangle=$rectangle_as_text");
     push(@components, {
       rectangle => $rectangle,
-      anchor => component_extract_anchor(\@matrix, \%vertices, $rectangle)
+      anchor => _component_extract_anchor(\@matrix, \%vertices, $rectangle)
     });
   }
 
-  pm_layout->new({
+  return pm_layout->new({
     vertices => \%vertices,
     segments => \@segments,
     components => \@components
@@ -572,9 +598,41 @@ sub layout_constraint_solve {
 }
 
 
+sub assert {
+  my ($self) = @_;
+  my $size = $self->size_get();
+  my $virtual_screen = _virtual_screen_create($self);
+  # Vertices cannot be next to each other.
+  foreach my $vertex (values %{$self->{vertices}}) {
+    pm_assert::assert_equals($size->{y}, scalar @$virtual_screen, "Virtual screen has invalid y size");
+    pm_assert::assert_equals($size->{x}, scalar @{$virtual_screen->[0]}, "Virtual screen has invalid x size");
+    $virtual_screen->[$vertex->{y}]->[$vertex->{x}] = $vertex->{letter};
+  }
+  foreach my $vertex (values %{$self->{vertices}}) {
+    my @offsets = (
+      {x => 0, y => -1},
+      {x => 1, y => 0},
+      {x => 0, y => 1},
+      {x => -1, y => 0},
+    );
+    foreach my $offset (@offsets) {
+      my $x = $vertex->{x} + $offset->{x};
+      my $y = $vertex->{y} + $offset->{y};
+      next if ($x < 0 || $x >= $size->{x});
+      next if ($y < 0 || $y >= $size->{y});
+      my $letter = $virtual_screen->[$y]->[$x];
+      pm_assert::assert_true(
+        $letter eq " " || $letter eq "-" || $letter eq "|" || $letter eq ".",
+        "Vertices cannot be next to each others."
+      );
+    }
+  }
+}
+
+
 sub render {
   my ($self, $content) = @_;
-  pm_log::debug("Render layout.");
+  pm_log::debug("pm_layout->render()");
   my $layout = $self;
   my $content_as_text = pm_misc::as_text($content);
   pm_log::debug("content=$content_as_text");
@@ -594,7 +652,12 @@ sub render {
   # Rendering components in order
   for (my $i = 0; $i < scalar @{$layout->{components}}; $i++) {
     my $component = pm_component->new($layout, $i);
-    $component->string_render($content->{$component->anchor_get()}, \@buffer);
+    my $anchor = $component->anchor_get();
+    pm_log::debug("anchor=$anchor");
+    if (defined $anchor && exists $content->{$anchor}) {
+      pm_log::debug("Rendering component: anchor=$anchor");
+      $component->string_render($content->{$anchor}, \@buffer);
+    }
   }
   # Rendering borders
   my $vertice_by_letter = $layout->{vertices};
@@ -700,19 +763,27 @@ sub render {
 
 
 sub component_extract {
-  my ($vertices, $segments, $top_left) = @_;
-  pm_log::debug("Searching component with left corner: $top_left");
+  my ($vertices, $segments, $top_left_letter) = @_;
+  pm_log::debug("Searching component with left corner: $top_left_letter");
 
-  sub component_from_state {
+  sub _component_from_state {
     my ($state) = @_;
+    pm_log::debug("_component_from_state()");
     my @states = ();
     while (defined $state) {
       push(@states, $state);
       $state = $state->{previous};
     }
-    my @result = ($states[0]->{letter});
-    for (my $i = 1; $i < scalar @states; $i++) {
-      if ($states[$i-1]->{direction} ne $states[$i]->{direction}) {
+    my $states_length = @states;
+    my @result = ();
+    for (my $i = 0; $i < $states_length; $i++) {
+      my $previous = ($i+$states_length-1) % $states_length;
+      pm_log::debug("previous=$previous");
+      my $d = $states[$i]->{direction};
+      my $letter = $states[$i]->{letter};
+      pm_log::debug("letter=$letter direction=$d");
+      if ($states[$i]->{direction} ne $states[$previous]->{direction}) {
+        pm_log::debug("Pushing: $letter");
         push(@result, $states[$i]->{letter});
       }
     }
@@ -728,13 +799,15 @@ sub component_extract {
     pm_hash::multi_hash_push(\%segments_by_vertex, $l2, $segment);
   }
   my @queue = ({
-    letter => $top_left,
-    direction => "",
+    letter => $top_left_letter,
+    direction => "up",
     previous => undef,
     length => 0
   });
+  my $top_left = $vertices->{$top_left_letter};
   my $min_length = 9999999999;
   my $component;
+  my %visited = ();
   while (scalar @queue > 0) {
     my $state = shift(@queue);
     my $letter1 = $state->{letter};
@@ -742,25 +815,29 @@ sub component_extract {
     my $direction = $state->{direction};
     foreach my $segment (@{$segments_by_vertex{$letter1}}) {
       my $letter2 = segment_other_get($segment, $letter1);
+      next if ($visited{$letter2});
       my $p2 = $vertices->{$letter2};
       my $new_direction;
       if ($p1->{x} < $p2->{x}) { $new_direction = "right"; }
       elsif ($p1->{y} < $p2->{y}) { $new_direction = "down"; }
       elsif ($p1->{x} > $p2->{x}) { $new_direction = "left"; }
       elsif ($p1->{y} > $p2->{y}) { $new_direction = "up"; }
+      else { pm_assert::fail("Direction must be up, right, down or left."); }
       pm_log::debug("letter1=$letter1, letter2=$letter2, direction=$direction, new_direction=$new_direction");
+      next if ($p2->{x} < $top_left->{x} || $p2->{y} < $top_left->{y});
       # Acceptable transitions
       next if (!(
         $direction eq $new_direction
-        || $direction eq "" && $new_direction eq "right"
+        || $direction eq "up" && $new_direction eq "right"
         || $direction eq "right" && $new_direction eq "down"
         || $direction eq "down" && $new_direction eq "left"
         || $direction eq "left" && $new_direction eq "up"
       ));
       pm_log::debug("Acceptable transition");
-      if ($letter2 eq $top_left) {
-        my $c = component_from_state($state);
+      if ($letter2 eq $top_left_letter) {
+        my $c = _component_from_state($state);
         my $c_as_text = join("", @$c);
+        pm_assert::assert_true(scalar @$c == 4, "Component must have 4 vertices. Found $c_as_text");
         pm_log::debug("Component found: $c_as_text");
         if ($state->{length} < $min_length) {
           pm_log::debug("Smaller component -> retaining.");
@@ -771,6 +848,7 @@ sub component_extract {
       }
       my $new_length = $state->{length} + segment_length_get($vertices, $segment);
       pm_log::debug("push: letter=$letter2, direction=$new_direction, length=$new_length");
+      $visited{$letter2} = true;
       push(@queue, {
         letter => $letter2,
         direction => $new_direction,
@@ -809,8 +887,9 @@ sub segment_length_get {
 }
 
 
-sub component_extract_anchor {
+sub _component_extract_anchor {
   my ($matrix, $vertices_ref, $rectangle_ref) = @_;
+  pm_log::debug("pm_layout::_component_extract_anchor()");
   my %vertices = %$vertices_ref;
   my @rectangle = @$rectangle_ref;
   my %top_left = %{$vertices{$rectangle[0]}};
@@ -826,7 +905,7 @@ sub component_extract_anchor {
   for (my $y = $top + 1; $y < $bottom; $y++) {
     for (my $x = $left + 1; $x < $right; $x++) {
       my $letter = $matrix->[$y][$x];
-      if ($letter =~ /[a-z]/) {
+      if ($letter =~ /[a-z0-9]/) {
         $anchor .= $letter;
       } elsif (length($anchor) > 0) {
         last;  # We already reached the end of the anchor
@@ -835,6 +914,21 @@ sub component_extract_anchor {
   }
   pm_log::debug("anchor=$anchor");
   return $anchor;
+}
+
+
+sub _virtual_screen_create {
+  my ($layout) = @_;
+  my $size = $layout->size_get();
+  my @virtual_screen = ();
+  for (my $y = 0; $y < $size->{y}; $y++) {
+    my @row = ();
+    for (my $x = 0; $x < $size->{x}; $x++) {
+      push @row, " ";
+    }
+    push @virtual_screen, \@row;
+  }
+  return \@virtual_screen;
 }
 
 
