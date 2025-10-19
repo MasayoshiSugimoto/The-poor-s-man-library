@@ -40,8 +40,9 @@ my $size = pm_console::size_get();
 pm_log::debug("width=$size->{x}, height=$size->{y}");
 
 my $command = pm_arguments::positional_argument_get(0);
-defined $command or die pm_log::exception("You need to specify a command.");
-if ($command eq "new") {
+if (!defined $command) {
+  # Do nothing
+} elsif ($command eq "new") {
   my $task = pm_arguments::positional_argument_get(1);
   defined $task or die pm_log::exception("You must specify a task.");
   pm_log::info("Creating new task: $task");
@@ -64,8 +65,32 @@ if ($command eq "new") {
   $task->{status} = true;
   $DB->from($DB_TABLE_NAME_TASK)
     ->update($task);
-} else {
-  my $list = pm_list->new(["a", "b", "c"]);
-  pm_ui::render_list_selection($list, 2);
-  pm_log::fatal("You need to specify a command.");
 }
+
+my $layout_as_text = <<EOF;
+A--------B
+| main   |
+C--------D
+|        |
+E--------F
+|        |
+G--------H
+EOF
+
+pm_layout::from_string($layout_as_text)
+  ->solve({
+    size => {
+      width => "100%",  # 100% of the terminal size
+      height => "100%"
+    },
+    BCED => {
+      horizontal_alignment => "center",
+      vertical_alignment => "center",
+    },
+    EFGH => {
+      height => 4,
+    }
+  })
+  ->render({
+    main => "hello"
+  });

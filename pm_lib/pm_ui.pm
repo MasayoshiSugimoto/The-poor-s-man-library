@@ -7,13 +7,11 @@ use constant {
 };
 
 
-sub buffer_char_write {
+sub _buffer_char_write {
   my ($buffer, $char, $x, $y) = @_;
-  pm_log::debug("Printing in buffer: char=$char x=$x y=$y");
   my $height = @{$buffer};
   die pm_log::exception("Empty buffer") if ($height == 0);
   my $width = @{$buffer->[0]};
-pm_log::debug("Buffer size: width=$width height=$height");
   if (!(0 <= $x && $x < $width && 0 <= $y && $y < $height)) {
     die pm_log::exception("Attempt to write outside of the buffer: x=$x y=$y width=$width height=$height");
   }
@@ -21,7 +19,7 @@ pm_log::debug("Buffer size: width=$width height=$height");
 }
 
 
-sub buffer_render {
+sub _buffer_render {
   my ($buffer) = @_;
   pm_log::debug("Rendering buffer");
   my $height = @{$buffer};
@@ -52,7 +50,20 @@ sub render_list_selection {
 }
 
 
-sub constraint_pourcentage_get {
+sub _key_normalize  {
+  my ($key) = @_;
+  my @l = split "", $key;
+  return _array_as_key(\@l);
+}
+
+
+sub _array_as_key {
+  my ($array) = @_;
+  return join("", sort @$array);
+}
+
+
+sub _constraint_pourcentage_get {
   my ($value_as_text) = @_;
   if ($value_as_text =~ /^([0-9]+)%$/) {
     my $pourcentage = $1;
@@ -64,13 +75,13 @@ sub constraint_pourcentage_get {
 }
 
 
-sub constraint_ratio_get {
+sub _constraint_ratio_get {
   my ($value_as_text) = @_;
-  return constraint_pourcentage_get($value_as_text) / 100;
+  return _constraint_pourcentage_get($value_as_text) / 100;
 }
 
 
-sub constraint_unit_get {
+sub _constraint_unit_get {
   my ($value_as_text) = @_;
   if ($value_as_text =~ /^([0-9]+)$/) {
     my $unit = $1;
@@ -79,19 +90,6 @@ sub constraint_unit_get {
     }
     die pm_log::exception("Invalid unit $unit");
   }
-}
-
-
-sub key_normalize  {
-  my ($key) = @_;
-  my @l = split "", $key;
-  return array_as_key(\@l);
-}
-
-
-sub array_as_key {
-  my ($array) = @_;
-  return join("", sort @$array);
 }
 
 
@@ -130,32 +128,30 @@ sub new {
 
 
 sub string_render {
-  my ($self, $string, $buffer) = @_;
+  my ($self, $string, $line_wrap, $buffer) = @_;
   pm_assert::assert_defined($string, "string not defined");
-  pm_assert::assert_defined($string, "buffer not defined");
-  pm_log::debug("pm_content->string_write($string)");
+  pm_assert::assert_defined($buffer, "buffer not defined");
+  pm_log::debug("pm_content->string_render($string, $line_wrap)");
   my $width = $self->{width};
   my $height = $self->{height};
   my $offset = $self->{offset};
   my $x = 1;
   my $y = 1;
-  foreach my $char (split("", $string)) {
-    if ($char eq "\n") {
-      $x = 1;
-      $y++;
-      next;
+  foreach my $line (split "\n", $string) {
+    foreach my $char (split("", $string)) {
+      if ($line_wrap && $x >= $width - 1) {  # New line
+        $x = 1;
+        $y++;
+      }
+      if (!$self->is_inside_relative($x, $y)) {
+        last;
+      }
+      my $x_abs = $x + $offset->{x};
+      my $y_abs = $y + $offset->{y};
+      pm_ui::_buffer_char_write($buffer, $char, $x_abs, $y_abs);
+      $x++;
     }
-    if ($x >= $width - 1) {  # New line
-      $x = 1;
-      $y++;
-    }
-    if (!$self->is_inside_relative($x, $y)) {
-      last;
-    }
-    my $x_abs = $x + $offset->{x};
-    my $y_abs = $y + $offset->{y};
-    pm_ui::buffer_char_write($buffer, $char, $x_abs, $y_abs);
-    $x++;
+    $y++;
   }
 }
 
@@ -282,13 +278,13 @@ sub solve {
   # Normalize constraint for easier access.
   my %normalized_constraints = ();
   foreach my $component (@{$self->{components}}) {
-    my $key = pm_ui::array_as_key($component->{rectangle});
+    my $key = pm_ui::_array_as_key($component->{rectangle});
     $normalized_constraints{$key} = {};
   }
   foreach my $key (keys %$constraints) {
     next if ($key eq "size");
     my $constraint = $constraints->{$key};
-    $key = pm_ui::key_normalize($key);
+    $key = pm_ui::_key_normalize($key);
     $normalized_constraints{$key}->{width} = $constraint->{width} if (defined $constraint->{width});
     $normalized_constraints{$key}->{height} = $constraint->{height} if (defined $constraint->{height});
   }
@@ -314,10 +310,10 @@ sub solve {
   my $screen_width_constraint = (defined $constraints->{size} && defined $constraints->{size}->{width})
     ? $constraints->{size}->{width}
     : "100%";
-  if (pm_ui::constraint_pourcentage_get($screen_width_constraint)) {
-    $screen_width = int(pm_ui::constraint_ratio_get($screen_width_constraint) * ($screen_size->{x} - $vertical_borders_count));
-  } elsif (pm_ui::constraint_unit_get($screen_width_constraint)) {
-    $screen_width = pm_ui::constraint_unit_get($screen_width_constraint) - $vertical_borders_count;
+  if (pm_ui::_constraint_pourcentage_get($screen_width_constraint)) {
+    $screen_width = int(pm_ui::_constraint_ratio_get($screen_width_constraint) * ($screen_size->{x} - $vertical_borders_count));
+  } elsif (pm_ui::_constraint_unit_get($screen_width_constraint)) {
+    $screen_width = pm_ui::_constraint_unit_get($screen_width_constraint) - $vertical_borders_count;
   } else {
     die pm_log::exception("Invalid screen width constraint: $screen_width_constraint");
   }
@@ -326,10 +322,10 @@ sub solve {
   my $screen_height_constraint = (defined $constraints->{size} && defined $constraints->{size}->{height})
     ? $constraints->{size}->{height}
     : "100%";
-  if (pm_ui::constraint_pourcentage_get($screen_height_constraint)) {
-    $screen_height = int(pm_ui::constraint_ratio_get($screen_height_constraint) * ($screen_size->{y} - $horizontal_borders_count));
-  } elsif (pm_ui::constraint_unit_get($screen_height_constraint)) {
-    $screen_height = pm_ui::constraint_unit_get($screen_height_constraint) - $horizontal_borders_count;
+  if (pm_ui::_constraint_pourcentage_get($screen_height_constraint)) {
+    $screen_height = int(pm_ui::_constraint_ratio_get($screen_height_constraint) * ($screen_size->{y} - $horizontal_borders_count));
+  } elsif (pm_ui::_constraint_unit_get($screen_height_constraint)) {
+    $screen_height = pm_ui::_constraint_unit_get($screen_height_constraint) - $horizontal_borders_count;
   } else {
     die pm_log::exception("Invalid screen height constraint: $screen_height_constraint");
   }
@@ -406,12 +402,12 @@ sub solve {
           } elsif (!defined $constraint || !defined $constraint->{height}) {
             pm_log::debug("No height constraint. Same as layout");
             $vertices{$other_letter}->{y} = $vertices{$v0->{letter}}->{y} + ($v1->{y} - $v0->{y});
-          } elsif (pm_ui::constraint_pourcentage_get($constraint->{height})) {
+          } elsif (pm_ui::_constraint_pourcentage_get($constraint->{height})) {
             pm_log::debug("Height pourcentage constraint: $constraint->{height}");
-            $vertices{$other_letter}->{y} = $vertices{$v0->{letter}}->{y} + pm_ui::constraint_ratio_get($constraint->{height}) * $screen_height;
-          } elsif (pm_ui::constraint_unit_get($constraint->{height})) {
+            $vertices{$other_letter}->{y} = $vertices{$v0->{letter}}->{y} + pm_ui::_constraint_ratio_get($constraint->{height}) * $screen_height;
+          } elsif (pm_ui::_constraint_unit_get($constraint->{height})) {
             pm_log::debug("Height unit constraint: $constraint->{height}");
-            $vertices{$other_letter}->{y} = $vertices{$v0->{letter}}->{y} + pm_ui::constraint_unit_get($constraint->{height}) - 1;
+            $vertices{$other_letter}->{y} = $vertices{$v0->{letter}}->{y} + pm_ui::_constraint_unit_get($constraint->{height}) - 1;
           }
           $vertices{$other_letter}->{x} = $vertices{$v0->{letter}}->{x};
         } elsif ($v0->{y} == $v1->{y} && $v0->{x} < $v1->{x}) {
@@ -423,12 +419,12 @@ sub solve {
             $vertices{$other_letter}->{x} = $vertices{$v0->{letter}}->{x} + ($v1->{x} - $v0->{x});
           } elsif (!defined $constraint) {
             die pm_log::exception("v0 should be already solved");
-          } elsif (pm_ui::constraint_pourcentage_get($constraint->{width})) {
+          } elsif (pm_ui::_constraint_pourcentage_get($constraint->{width})) {
             pm_log::debug("Width pourcentage constraint: $constraint->{width}");
-            $vertices{$other_letter}->{x} = $vertices{$v0->{letter}}->{x} + pm_ui::constraint_ratio_get($constraint->{width}) * $screen_width;
-          } elsif (pm_ui::constraint_unit_get($constraint->{width})) {
+            $vertices{$other_letter}->{x} = $vertices{$v0->{letter}}->{x} + pm_ui::_constraint_ratio_get($constraint->{width}) * $screen_width;
+          } elsif (pm_ui::_constraint_unit_get($constraint->{width})) {
             pm_log::debug("Width unit constraint: $constraint->{width}");
-            $vertices{$other_letter}->{x} = $vertices{$v0->{letter}}->{x} + pm_ui::constraint_unit_get($constraint->{width}) - 1;
+            $vertices{$other_letter}->{x} = $vertices{$v0->{letter}}->{x} + pm_ui::_constraint_unit_get($constraint->{width}) - 1;
           }
           $vertices{$other_letter}->{y} = $vertices{$v0->{letter}}->{y};
         }
@@ -575,7 +571,7 @@ sub from_string {
   foreach my $letter (sort keys %vertices) {
     my $rectangle = component_extract(\%vertices, \@segments, $letter);
     next if (!defined $rectangle);
-    my $rectangle_as_text = join "", @$rectangle;
+    my $rectangle_as_text = pm_ui::_array_as_key($rectangle);
     pm_assert::assert_true(scalar @$rectangle == 4, "Rectangle must have 4 vertices. Found $rectangle_as_text");
     pm_log::debug("rectangle=$rectangle_as_text");
     push(@components, {
@@ -656,10 +652,11 @@ sub render {
     pm_log::debug("anchor=$anchor");
     if (defined $anchor && exists $content->{$anchor}) {
       pm_log::debug("Rendering component: anchor=$anchor");
-      $component->string_render($content->{$anchor}, \@buffer);
+      $component->string_render($content->{$anchor}, false, \@buffer);
     }
   }
   # Rendering borders
+  pm_log::debug("Rendering borders");
   my $vertice_by_letter = $layout->{vertices};
   foreach my $segment (@{$layout->{segments}}) {
     my $vertices = $segment->{vertices};
@@ -677,7 +674,7 @@ sub render {
         $end = $p1->{x};
       }
       for (my $x = $start + 1; $x < $end; $x++) {
-        pm_ui::buffer_char_write(\@buffer, "─", $x, $y);
+        pm_ui::_buffer_char_write(\@buffer, "─", $x, $y);
       }
     } elsif ($segment->{border} eq "|") {
       my $start;
@@ -691,7 +688,7 @@ sub render {
         $end = $p1->{y};
       }
       for (my $y = $start + 1; $y < $end; $y++) {
-        pm_ui::buffer_char_write(\@buffer, "│", $x, $y);
+        pm_ui::_buffer_char_write(\@buffer, "│", $x, $y);
       }
     } elsif ($segment->{border} eq ".") {
       # Do nothing
@@ -703,7 +700,6 @@ sub render {
   pm_log::debug("Rendering corners");
   my $segments_by_vertex = $self->segments_by_vertex_get();
   foreach my $letter1 (sort keys %{$layout->{vertices}}) {
-    pm_log::debug("letter1=$letter1");
     my $v1 = $layout->{vertices}->{$letter1};
     defined $v1 or die pm_log::exception("V1 should be defined");
     my $segments = $segments_by_vertex->{$letter1};
@@ -714,7 +710,6 @@ sub render {
     foreach my $segment (@$segments) {
       next if ($segment->{border} eq ".");
       my $letter2 = segment_other_get($segment, $letter1);
-      pm_log::debug("letter2=$letter2");
       my $v2 = $layout->{vertices}->{$letter2};
       defined $v2 or die pm_log::exception("V2 should be defined");
       if ($v1->{x} == $v2->{x} && $v1->{y} < $v2->{y}) {
@@ -729,7 +724,6 @@ sub render {
         #die pm_log::exception("Vertex should be aligned");
       }
     }
-    pm_log::debug("up=$up right=$right down=$down left=$left");
     my $corner = " ";
     if ($up && $right && $down && $left) {
       $corner = "┼";
@@ -756,9 +750,18 @@ sub render {
     } else {
       die pm_log::exception("Unexpected condition");
     }
-    pm_ui::buffer_char_write(\@buffer, $corner, $v1->{x}, $v1->{y});
+    pm_ui::_buffer_char_write(\@buffer, $corner, $v1->{x}, $v1->{y});
   }
-  pm_ui::buffer_render(\@buffer);
+  pm_ui::_buffer_render(\@buffer);
+}
+
+
+sub component_has {
+  my ($self, $component_key) = @_;
+  foreach my $component (@{$self->{components}}) {
+    return true if (pm_ui::_array_as_key($component->{rectangle}) eq $component_key);
+  }
+  return false;
 }
 
 
@@ -929,6 +932,76 @@ sub _virtual_screen_create {
     push @virtual_screen, \@row;
   }
   return \@virtual_screen;
+}
+
+
+sub _constraint_size_normalize {
+  my ($self, $component_size) = @_;
+  pm_log::debug("pm_ui::_constraint_normalize_size()");
+  my $width = exists $component_size->{width}
+    ? $component_size->{width}
+    : "100%";
+  my $height = exists $component_size->{height}
+    ? $component_size->{height}
+    : "100%";
+  my $screen_size = pm_console::size_get();
+  my $border_count = $self->_border_count();
+  if (pm_ui::_constraint_pourcentage_get($width)) {
+    $width = int(pm_ui::_constraint_ratio_get($width) * ($screen_size->{x} - $border_count->{vertical}));
+  } elsif (pm_ui::_constraint_unit_get($width)) {
+    $width = pm_ui::_constraint_unit_get($width);
+  } else {
+    die pm_log::exception("Invalid screen width constraint: $width");
+  }
+  if (pm_ui::_constraint_pourcentage_get($height)) {
+    $height = int(pm_ui::_constraint_ratio_get($height) * ($screen_size->{x} - $border_count->{horizontal}));
+  } elsif (pm_ui::_constraint_unit_get($height)) {
+    $height = pm_ui::_constraint_unit_get($height);
+  } else {
+    die pm_log::exception("Invalid screen height constraint: $height");
+  }
+  return {
+    width => $width,
+    height => $height
+  };
+}
+
+
+# Normalize constraints for easier processing later.
+sub _constraint_normalize {
+  my ($self, $constraints) = @_;
+  pm_log::debug("pm_layout->_constraint_normalize()");
+  my %normalized_constraints = ();
+  if (!exists $constraints->{size}) {
+    $normalized_constraints{size} = "100%";  # Default screen size is size of terminal.
+  }
+  $normalized_constraints{size} = $self->_constraint_size_normalize($constraints->{size});
+  # Normalize component key
+  foreach my $key (keys %{$constraints}) {
+    next if ($key eq "size");
+    my $component_constraint = $constraints->{$key};
+    my $normalized_component_constraint = $self->_constraint_size_normalize($component_constraint);
+    my $normalized_key = pm_ui::_key_normalize($key);
+    $normalized_constraints{$normalized_key} = $normalized_component_constraint;
+    pm_assert::assert_true($self->component_has($normalized_key), "Component does not have key: $normalized_key");
+  }
+  return \%normalized_constraints;
+}
+
+
+sub _border_count {
+  my ($self) = @_;
+  pm_log::debug("pm_layout->_border_count()");
+  my %horizontal_borders = ();
+  my %vertical_borders = ();
+  foreach my $vertex (values %{$self->{vertices}}) {
+    $horizontal_borders{$vertex->{y}} = true;
+    $vertical_borders{$vertex->{x}} = true;
+  }
+  my %border_counts = ();
+  $border_counts{horizontal} = keys %horizontal_borders;
+  $border_counts{vertical} = keys %vertical_borders;
+  return \%border_counts;
 }
 
 

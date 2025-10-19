@@ -106,4 +106,26 @@ sub as_text {
 }
 
 
+sub deep_copy {
+  my ($x) = @_;
+  return undef if (!defined $x);
+  my $refX = ref($x);
+  if ($refX eq 'ARRAY') {
+    my @array = ();
+    foreach my $v (@$x) {
+      push @array, deep_copy($v);
+    }
+    return \@array;
+  }
+  if ($refX eq 'HASH') {
+    my %hash = ();
+    foreach my $key (keys %$x) {
+      $hash{$key} = deep_copy($x->{$key});
+    }
+    return \%hash;
+  }
+  return $x;
+}
+
+
 1;
