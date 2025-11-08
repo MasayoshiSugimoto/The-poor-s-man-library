@@ -11,6 +11,6 @@ my $data = [
   [7, 8, 9]
 ];
 my $table = pm_table->new($columns, $data);
-my $record = $table->filter(sub {$_[0]->get('c1') > 4})
+my $record = $table->filter(sub {$_[0]->{c1} > 4})
   ->first();
 pm_test_util::assert_equals({c1 => 7, c2 => 8, c3 => 9}, $record, "Record does not match");

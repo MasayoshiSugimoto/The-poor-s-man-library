@@ -14,7 +14,7 @@ opendir(my $test_dir, $test_dir_path)
   or die pm_log::exception("Cannot open $test_dir_path $!");
 my @files = grep { -f "$test_dir_path/$_" } readdir($test_dir);
 # Change the file name to test only one file.
-@files = ("ui_layout_normalize.test.pl");
+#@files = ("db_table_where.test.pl");
 foreach my $file (@files) {
   pm_log::info("Executing test: $file");
   my $success = system("perl $test_dir_path/$file");

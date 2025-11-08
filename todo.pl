@@ -60,7 +60,7 @@ if (!defined $command) {
   defined $task_name or die pm_log::exception("You must specify a task.");
   pm_log::info("Marking task as done: $task_name");
   my $task = $DB->from($DB_TABLE_NAME_TASK)
-    ->where(sub {$_[0]->get("task") eq $task_name})
+    ->where(sub {$_[0]->{task} eq $task_name})
     ->first();
   $task->{status} = true;
   $DB->from($DB_TABLE_NAME_TASK)

@@ -22,8 +22,8 @@ for my $i (1..4) {
   });
 }
 my $v = $table1
-  ->where(sub {$_[0]->get("x") % 2 == 0})
-  ->where(sub {$_[0]->get("x") > 3})
+  ->where(sub {$_[0]->{x} % 2 == 0})
+  ->where(sub {$_[0]->{x} > 3})
   ->first();
 pm_test_util::assert_equals(4, $v->{x}, "x is incorrect");
 pm_test_util::assert_equals(40, $v->{y}, "y is incorrect");

@@ -119,7 +119,7 @@ sub delete {
   my $id = $record->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD};
   defined $id or die pm_log::exception("Attempt to delete a record which does not has a primary key");
   $self->{table} = $self->{table}
-    ->filter(sub {$_[0]->get($pm_constants::DB_TABLE_PRIMARY_KEY_FIELD) != $id});
+    ->filter(sub {$_[0]->{$pm_constants::DB_TABLE_PRIMARY_KEY_FIELD} != $id});
   pm_file::file_delete($self->record_path_get($id));
 }
 

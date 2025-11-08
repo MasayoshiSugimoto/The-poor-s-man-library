@@ -21,7 +21,7 @@ for my $i (1..4) {
     y => $i * 10
   });
 }
-my $result = $table1->where(sub {$_[0]->get("x") > 2});
+my $result = $table1->where(sub {$_[0]->{x} > 2});
 pm_test_util::assert_equals(2, $result->size(), "Incorrect number of elements");
 pm_test_util::assert_equals(3, $result->row_get(0)->get("x"), "First element is not correct");
 pm_test_util::assert_equals(4, $result->row_get(1)->get("x"), "Second element is not correct");

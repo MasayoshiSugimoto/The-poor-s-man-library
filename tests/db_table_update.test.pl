@@ -25,13 +25,13 @@ $v0->{y} = 2;
 $table1->update($v0);
 my $v1;
 $v1 = $table1
-  ->where(sub {$_[0]->get("x") > 0})
+  ->where(sub {$_[0]->{x} > 0})
   ->first();
 pm_test_util::assert_equals(1, $v1->{x}, "x is incorrect");
 pm_test_util::assert_equals(2, $v1->{y}, "y is incorrect");
 $v1 = $db
   ->from("table1")
-  ->where(sub {$_[0]->get("x") > 0})
+  ->where(sub {$_[0]->{x} > 0})
   ->first();
 pm_test_util::assert_equals(1, $v1->{x}, "x is incorrect");
 pm_test_util::assert_equals(2, $v1->{y}, "y is incorrect");

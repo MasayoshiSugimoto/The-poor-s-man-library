@@ -67,14 +67,19 @@ sub select {
 }
 
 
-sub filter {
+sub filter($&) {
   my ($self, $f_filter) = @_;
   $self->assert_invariant();
-  my $record = pm_table_record->new($self->{columns});
   my @data = ();
-  foreach my $r (@{$self->{data}}) {
-    $record->record_set($r);
-    push(@data, $r) if ($f_filter->($record)); 
+  foreach my $row (@{$self->{data}}) {
+    my %record = ();
+    for (my $i = 0; $i < scalar @$row; $i++) {
+      my $key = $self->{columns}->get($i);
+      my $value = $row->[$i];
+      pm_log::debug("key=$key value=$value");
+      $record{$key} = $value;
+    }
+    push(@data, $row) if ($f_filter->(\%record)); 
   }
   return pm_table->new($self->{columns}, \@data);
 }
