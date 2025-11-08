@@ -155,9 +155,8 @@ sub normalize {
 
 
 sub as_text {
-  my ($self) = @_;
-  my $fields = $self->join(", ");
-  return "[$fields]";
+  my ($self, $indent) = @_;
+  return pm_misc::as_text($self->{data}, $indent);
 }
 
 

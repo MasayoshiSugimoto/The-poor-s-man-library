@@ -69,6 +69,7 @@ sub as_text {
   $indent = "" if (!defined $indent);
   return "undef" if (!defined $x);
   my $refX = ref($x);
+  pm_log::debug("ref(\$x)=$refX");
   if ($refX eq 'ARRAY') {
     my $result = "[\n";
     my $first = true;
@@ -101,7 +102,7 @@ sub as_text {
   }
   return "$x" if ($refX eq 'SCALAR');
   return "$x" if ($refX eq 'CODE');
-  return $x->as_text() if ($x->can('as_text'));
+  return $x->as_text($indent) if ($x->can('as_text'));
   return "$x";
 }
 

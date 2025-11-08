@@ -88,7 +88,16 @@ sub send {
   my ($self) = @_;
   my $command = $self->as_command();
   pm_log::info("Calling curl: $command");
-  system($command);
+  my $result = `$command`;
+  pm_log::debug("Result=$result");
+  return pm_json::parse($result);
+}
+
+
+sub get {
+  my ($self) = @_;
+  $self->method_set($METHOD_GET);
+  $self->send();
 }
 
 
