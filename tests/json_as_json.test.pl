@@ -7,9 +7,13 @@ use pm_include_test;
 # Test conversion to json.
 
 
-pm_test_util::assert_equals('', pm_json::as_json(undef), "Undef");
+pm_log::debug("Undef");
+pm_test_util::assert_equals('null', pm_json::as_json(undef), "Undef");
+pm_log::debug("Empty object");
 pm_test_util::assert_equals('{}', pm_json::as_json({}), "Empty object");
+pm_log::debug("Hash with 1 number property");
 pm_test_util::assert_equals('{"x":0}', pm_json::as_json({x=>0}), "Hash with 1 number property");
+pm_log::debug("Hash with multiple number properties");
 pm_test_util::assert_equals(
   '{"x":0,"y":1}', 
   pm_json::as_json({x=>0, y=>1}),

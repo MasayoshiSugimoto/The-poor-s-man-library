@@ -31,6 +31,7 @@ use pm_md;
 use pm_console;
 use pm_ui;
 use pm_hash;
+use pm_os;
 
 
 1;

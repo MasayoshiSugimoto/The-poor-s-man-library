@@ -100,10 +100,12 @@ sub as_text {
     $result .= "\n$indent}";
     return $result;
   }
-  return "$x" if ($refX eq 'SCALAR');
-  return "$x" if ($refX eq 'CODE');
+  return $x if ($refX eq 'SCALAR');
+  return $x if ($refX eq 'CODE');
+  return $x if ($refX eq '');
+  return $x if (!defined $refX);
   return $x->as_text($indent) if ($x->can('as_text'));
-  return "$x";
+  return $x;
 }
 
 

@@ -8,6 +8,10 @@ our $METHOD_POST = 'POST';
 our $METHOD_PUT = 'PUT';
 
 our $CONTENT_TYPE_JSON = 'application/json';
+our $CONTENT_TYPE_OCTET_STREAM = 'application/octet\stream';
+our $CONTENT_TYPE_DEFAULT = '';
+
+our $AUTHENTICATION_TYPE_BEARER = 'Bearer';
 
 
 sub new {
@@ -18,7 +22,8 @@ sub new {
     headers => {},
     method => 'GET',
     content => undef,
-    content_type => $CONTENT_TYPE_JSON
+    content_type => $CONTENT_TYPE_JSON,
+    binary_content => {}
   };
   bless $self, $class;
   return $self;
@@ -53,12 +58,30 @@ sub content_set {
 }
 
 
+sub file_add {
+  my ($self, $field_name, $file_path) = @_;
+  $self->{binary_content}->{$field_name} = "\@$file_path";
+  $self->{content_type} = $CONTENT_TYPE_DEFAULT;
+  return $self;
+}
+
+
+sub binary_content_add {
+  my ($self, $field_name, $value) = @_;
+  $self->{binary_content}->{$field_name} = "$value";
+  $self->{content_type} = $CONTENT_TYPE_DEFAULT;
+  return $self;
+}
+
+
 sub as_command {
   my ($self) = @_;
   my $content_type = pm_list->new();
   if ($self->{method} eq $METHOD_POST) {
     if ($self->{content_type} eq $CONTENT_TYPE_JSON) {
       $content_type->push("-H 'Content-type: $self->{content_type}'");
+    } elsif ($self->{content_type} eq '') {
+      # Use default
     } else {
       die pm_log::exception("Content-type not supported: $self->{content_type}");
     }
@@ -74,12 +97,17 @@ sub as_command {
       $content = "-d '$content'";
     }
   }
+  my $binary_blocks = pm_list->new();
+  while (my ($field, $value) = each %{$self->{binary_content}}) {
+    $binary_blocks->push("-F '$field=$value'");
+  }
+  my $binary_content_as_string = $binary_blocks->join("\\\n  ");
   return <<EOF;
 curl \\
-  -X $self->{method} \\
+  -X $self->{method} '$self->{url}' \\
   ${headers} \\
   $content \\
-  '$self->{url}'
+  $binary_content_as_string
 EOF
 }
 
@@ -97,6 +125,13 @@ sub send {
 sub get {
   my ($self) = @_;
   $self->method_set($METHOD_GET);
+  $self->send();
+}
+
+
+sub post {
+  my ($self) = @_;
+  $self->method_set($METHOD_POST);
   $self->send();
 }
 

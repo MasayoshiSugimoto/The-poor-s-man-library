@@ -11,11 +11,10 @@ use constant {
 sub as_json {
   my ($x) = @_;
   if (!defined $x) {
-    return "";
+    return "null";
   }
   my $result = "";
   my $type = ref($x);
-  pm_log::debug("ref(\$x)=$type");
   if ($type eq "HASH") {
     $result .= "{";
     my $first = true;
@@ -42,9 +41,13 @@ sub as_json {
       }
     }
     $result .= "]";
+  } elsif ($type eq "SCALAR" && looks_like_number($x) && $x =~ /^0\d.*/) {  # Prevent number with leading zero to be interpreted as numbers.
+    $result = "\"$x\"";
   } elsif ($type eq "SCALAR" && looks_like_number($x)) {  # Need something else for "1.0"
     $result = "$x";
   } elsif ($type eq "SCALAR") {
+    $result = "\"$x\"";
+  } elsif (!$type && looks_like_number($x) && $x =~ /^0\d.*/) {  # Prevent number with leading zero to be interpreted as numbers.
     $result = "\"$x\"";
   } elsif (!$type && looks_like_number($x)) {
     $result = "$x";
@@ -59,6 +62,7 @@ sub as_json {
 
 sub parse {
   my ($text) = @_;
+  return undef if ($text eq "");
   $text =~ s/^[\n\s]+|[\n\s]+$//g;
   my $pos = 0;
   my $parse_value;
@@ -76,7 +80,7 @@ sub parse {
     return $parse_string->() if $text =~ /\G\"/;
     return $parse_number->() if $text =~ /\G-?\d/;
     return $parse_literal->() if $text =~ /\G(?:true|false|null)/;
-    die "Unexpected token at position $pos";
+    die pm_log::exception("Unexpected token at position $pos");
   };
 
   $parse_object = sub {

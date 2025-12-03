@@ -2,6 +2,7 @@ package pm_file;
 use strict;
 use warnings;
 use File::Path qw(remove_tree);
+use File::Temp qw(tempfile);
 
 
 sub file_delete {
@@ -47,6 +48,18 @@ sub file_save_string {
   print $fh $content;
   close $fh;
   pm_log::debug("File saved: file_path=$file_path");
+}
+
+
+sub file_copy {
+  my ($src_file_path, $output_file_path) = @_;
+  my $content = file_load_as_string($src_file_path);
+  file_save_string($output_file_path, $content);
+}
+
+
+sub file_temp {
+  return tempfile();
 }
 
 
