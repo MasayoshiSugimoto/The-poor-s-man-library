@@ -11,16 +11,19 @@ use constant {
 };
 
 
-my $coffees = pm_http_client->new('https://api.sampleapis.com/coffee/hot')
+my $result = pm_http_client->new('https://pokeapi.co/api/v2/pokemon/')
   ->get();
-pm_log::info(pm_misc::as_text($coffees));
-my $table = pm_table->new(['id', 'title', 'description']);
-$coffees->for_each(sub {
-  my ($receipe) = @_;
+pm_log::info(pm_misc::as_text($result));
+my $pokemons = $result->{results};
+my $table = pm_table->new(['Name', 'Type 1', 'Type 2']);
+$pokemons->for_each(sub {
+  my ($pokemon_ref) = @_;
+  my $pokemon = pm_http_client->new($pokemon_ref->{url})
+    ->get();
   $table->push({
-    id => $receipe->{id},
-    title => $receipe->{title},
-    description =>  substr($receipe->{description}, 0, 30)
-  })
+    'Name' => pm_function::call_or_default(sub {$pokemon->{name}}, ""),
+    'Type 1' => pm_function::call_or_default(sub {$pokemon->{types}->get(0)->{type}->{name}}, ""),
+    'Type 2' => pm_function::call_or_default(sub {$pokemon->{types}->get(1)->{type}->{name}}, "")
+  });
 });
 print pm_md::table_as_markdown($table);

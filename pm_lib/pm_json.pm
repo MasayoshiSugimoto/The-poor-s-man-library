@@ -73,7 +73,6 @@ sub parse {
   my $parse_literal;
 
   $parse_value = sub  {
-    pm_log::debug("parse_value");
     $text =~ /\G[\s\n]*/gc;
     return $parse_object->() if $text =~ /\G\{/;
     return $parse_array->()  if $text =~ /\G\[/;
@@ -84,7 +83,6 @@ sub parse {
   };
 
   $parse_object = sub {
-    pm_log::debug("parse_object");
     my %obj;
     $text =~ /\G\{/gc;
     $text =~ /\G[\n\s]*/gc;
@@ -98,7 +96,6 @@ sub parse {
         die "Expected ':'"
       }
       my $value = $parse_value->();
-      pm_log::debug("key=$key, value=$value");
       $obj{$key} = $value;
       $text =~ /\G[\n\s]*/gc;
       last if $text =~ /\G\}/gc;
@@ -108,7 +105,6 @@ sub parse {
   };
 
   $parse_array = sub {
-    pm_log::debug("parse_array");
     my @arr;
     $text =~ /\G\[/gc;
     $text =~ /\G[\n\s]*/gc;
@@ -119,17 +115,14 @@ sub parse {
       $text =~ /\G,/gc or die "Expected ',' or ']'";
     }
     my $list = pm_list->new(\@arr);
-    pm_log::debug($list->as_text());
     return $list;
   };
 
   $parse_string = sub {
-    pm_log::debug("parse_string");
     $text =~ /\G"/gc;
     my $str = '';
     while ($text =~ /\G([^"\\]*)/gc) {
       $str .= $1;
-      pm_log::debug("str=$str");
       if ($text =~ /\G\"/gc) {
         last;
       } elsif ($text =~ /\G\\(.)/gc) {
@@ -141,28 +134,20 @@ sub parse {
         $esc eq '\\' ? '\\' : $esc;
       }
     }
-    pm_log::debug("String found: $str");
     return $str;
   };
 
   $parse_number = sub {
-    pm_log::debug("parse_number");
     $text =~ /\G(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/gc;
-    pm_log::debug("Number found: $1");
     return 0 + $1;
   };
 
   $parse_literal = sub {
-    pm_log::debug("parse_literal");
-    pm_log::debug($text);
     if ($text =~ /\Gtrue/gc) {
-      pm_log::debug("Boolean found: true");
       return true;
     } elsif ($text =~ /\Gfalse/gc) {
-      pm_log::debug("Boolean found: false");
       return false;
     } elsif ($text =~ /\Gnull/gc) {
-      pm_log::debug("null found");
       return undef;
     } else {
       $text =~ /\G(.*)/gc;
@@ -183,19 +168,15 @@ sub json_as_table {
   pm_assert::assert_equals("HASH", ref($raw_header), "Input json must be a list of hash.");
   my $header = pm_list->new();
   for my $key (keys %{$raw_header}) {
-    pm_log::debug("key=$key");
     $header->push($key);
   }
   my $header_as_text = $header->as_text();
-  pm_log::debug("header=$header_as_text");
   # Extract data
   my $as_array = sub {
     my ($record) = @_;
     my $result = $header->map(sub {$record->{$_[0]}});
-    pm_log::debug($result->as_text());
     return $result->as_array();
   };
-  pm_log::debug("data=");
   my $data = $json->map($as_array)
     ->as_array();
   return pm_table->new($header, $data);
