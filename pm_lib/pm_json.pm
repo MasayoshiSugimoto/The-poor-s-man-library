@@ -60,6 +60,64 @@ sub as_json {
 }
 
 
+sub as_pretty_json {
+  my ($x, $indent_increment, $indent) = @_;
+  if (!defined $x) {
+    return "null";
+  }
+  $indent_increment = "  " if (!defined $indent_increment);
+  $indent = "" if (!defined $indent);
+  my $space = "";
+  $space = " " if (length($indent_increment) > 0);
+  my $result = "";
+  my $type = ref($x);
+  if ($type eq "HASH") {
+    my $indent2 = $indent . $indent_increment;
+    $result .= "\{\n";
+    my $first = true;
+    foreach my $key (sort keys %$x) {
+      my $v = as_pretty_json($x->{$key}, $indent_increment, $indent2);
+      if ($first) {
+        $result .= "$indent2\"$key\":$space$v";
+        $first = false;
+      } else {
+        $result .= ",\n$indent2\"$key\":$space$v";
+      }
+    }
+    $result .= "\n$indent}";
+  } elsif ($type eq "ARRAY") {
+    my $indent2 = $indent . $indent_increment;
+    $result .= "$indent\[\n";
+    my $first = true;
+    foreach my $value (@$x) {
+      my $v = as_pretty_json($value, $indent_increment, $indent2);
+      if ($first) {
+        $result .= "$indent2$v";
+        $first = false;
+      } else {
+        $result .= ",\n$indent2$v";
+      }
+    }
+    $result .= "\n$indent]";
+  } elsif ($type eq "SCALAR" && looks_like_number($x) && $x =~ /^0\d.*/) {  # Prevent number with leading zero to be interpreted as numbers.
+    $result = "\"$x\"";
+  } elsif ($type eq "SCALAR" && looks_like_number($x)) {  # Need something else for "1.0"
+    $result = "$x";
+  } elsif ($type eq "SCALAR") {
+    $result = "\"$x\"";
+  } elsif (!$type && looks_like_number($x) && $x =~ /^0\d.*/) {  # Prevent number with leading zero to be interpreted as numbers.
+    $result = "\"$x\"";
+  } elsif (!$type && looks_like_number($x)) {
+    $result = "$x";
+  } elsif (!$type) {
+    $result = "\"$x\"";
+  } else {
+    die pm_log::exception("Type $type not supported");
+  }
+  return $result;
+}
+
+
 sub parse {
   my ($text) = @_;
   return undef if ($text eq "");
@@ -114,8 +172,7 @@ sub parse {
       last if $text =~ /\G\]/gc;
       $text =~ /\G,/gc or die "Expected ',' or ']'";
     }
-    my $list = pm_list->new(\@arr);
-    return $list;
+    return \@arr;
   };
 
   $parse_string = sub {
@@ -161,10 +218,10 @@ sub parse {
 
 sub json_as_table {
   my ($json) = @_;
-  pm_assert::assert_equals("pm_list", ref($json), "Input json must be an array.");
-  pm_assert::assert_true($json->size() > 0, "Input json cannot be an empty array.");
+  pm_assert::assert_equals("ARRAY", ref($json), "Input json must be an array.");
+  pm_assert::assert_true(scalar @$json > 0, "Input json cannot be an empty array.");
   # Extract header
-  my $raw_header = $json->get(0);
+  my $raw_header = $json->[0];
   pm_assert::assert_equals("HASH", ref($raw_header), "Input json must be a list of hash.");
   my $header = pm_list->new();
   for my $key (keys %{$raw_header}) {
@@ -177,7 +234,8 @@ sub json_as_table {
     my $result = $header->map(sub {$record->{$_[0]}});
     return $result->as_array();
   };
-  my $data = $json->map($as_array)
+  my $data = pm_list->new($json)
+    ->map($as_array)
     ->as_array();
   return pm_table->new($header, $data);
 }

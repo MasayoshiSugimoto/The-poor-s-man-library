@@ -104,6 +104,7 @@ sub as_command {
   my $binary_content_as_string = $binary_blocks->join("\\\n  ");
   return <<EOF;
 curl \\
+  -s \\
   -X $self->{method} '$self->{url}' \\
   ${headers} \\
   $content \\
@@ -115,7 +116,7 @@ EOF
 sub send {
   my ($self) = @_;
   my $command = $self->as_command();
-  pm_log::info("Calling curl: $command");
+  pm_log::debug("Calling curl: $command");
   my $result = `$command`;
   pm_log::debug("Result=$result");
   return pm_json::parse($result);
