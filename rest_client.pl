@@ -67,7 +67,7 @@ sub instruction_render {
         "Command" => $commands->{$key}
     });
   }
-  print pm_md::table_as_markdown($table);
+  print pm_ui::table_as_ui($table);
 }
 
 
@@ -92,11 +92,11 @@ sub run {
   header_render();
   #pokemon_table_render();
   print("> Querying");
-  pokemons_render();
+  #  pokemons_render();
   println();
   println();
   instruction_render();
-  my $line = <STDIN>;
+  #my $line = <STDIN>;
 }
 
 
