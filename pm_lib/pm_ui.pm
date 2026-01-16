@@ -8,12 +8,37 @@ use constant {
 
 
 sub table_as_ui {
-  my ($table) = @_;
+  my ($table, $options) = @_;
 
   my $columns = $table->columns_get();
   my $width = $columns->size();
   my $height = $table->size();
 
+  # Options
+  my $is_border = exists $options->{is_border}
+    ? $options->{is_border}
+    : true;
+  my $is_header = exists $options->{is_header}
+    ? $options->{is_header}
+    : true;
+
+  # Configure frame
+  my  $frame_top_left          =  $is_border  ?  "┌"  :  " ";
+  my  $frame_top               =  $is_border  ?  "─"  :  " ";
+  my  $frame_top_delimiter     =  $is_border  ?  "┬"  :  " ";
+  my  $frame_top_right         =  $is_border  ?  "┐"  :  " ";
+  my  $frame_right             =  $is_border  ?  "│"  :  " ";
+  my  $frame_right_delimiter   =  $is_border  ?  "┤"  :  " ";
+  my  $frame_bottom_right      =  $is_border  ?  "┘"  :  " ";
+  my  $frame_bottom            =  $is_border  ?  "─"  :  " ";
+  my  $frame_bottom_delimiter  =  $is_border  ?  "┴"  :  " ";
+  my  $frame_bottom_left       =  $is_border  ?  "└"  :  " ";
+  my  $frame_left              =  $is_border  ?  "│"  :  " ";
+  my  $frame_left_delimiter    =  $is_border  ?  "├"  :  " ";
+  my  $frame_inner_horizontal  =  $is_border  ?  "─"  :  " ";
+  my  $frame_inner_vertical    =  $is_border  ?  "│"  :  " ";
+  my  $frame_inner_cross       =  $is_border  ?  "┼"  :  " ";
+ 
   # Calculate the width of each columns
   my @column_widths = @{
     $columns
@@ -31,42 +56,50 @@ sub table_as_ui {
 
   # Generate header
   my $result = "";
-  $result .= "┌";
+  $result .= $frame_top_left;
   for (my $x = 0; $x < $width; $x++) {
-    $result .= "┬" if ($x > 0);
-    $result .= pm_string::right_pad("", $column_widths[$x] + 2, "─");
+    $result .= $frame_top_delimiter if ($x > 0);
+    $result .= pm_string::right_pad("", $column_widths[$x] + 2, $frame_top);
   }
-  $result .= "┐\n";
-  $result .= "│";
-  for (my $x = 0; $x < $width; $x++) {
-    my $field = $columns->get($x);
-    $result .= pm_string::right_pad(" $field ", $column_widths[$x] + 2);
-    $result .= "│";
+  $result .= $frame_top_right;
+  if ($is_header) {
+    $result .= "\n";
+    $result .= "$frame_left";
+    for (my $x = 0; $x < $width; $x++) {
+      $result .= $frame_inner_vertical if ($x > 0);
+      my $field = $columns->get($x);
+      $result .= pm_string::right_pad(" $field ", $column_widths[$x] + 2);
+    }
+    $result .= $frame_right;
+    $result .= "\n";
+    $result .= $frame_left_delimiter;
+    for (my $x = 0; $x < $width; $x++) {
+      $result .= $frame_inner_cross if ($x > 0);
+      $result .= pm_string::right_pad("", $column_widths[$x] + 2, $frame_inner_horizontal);
+    }
+    $result .= $frame_right_delimiter;
   }
-  $result .= "\n├";
-  for (my $x = 0; $x < $width; $x++) {
-    $result .= "┼" if ($x > 0);
-    $result .= pm_string::right_pad("", $column_widths[$x] + 2, "─");
-  }
-  $result .= "┤";
 
   # Generate table
   for (my $y = 0; $y < $height; $y++) {
-    $result .= "\n│";
+    $result .= "\n";
+    $result .= $frame_left;
     for (my $x = 0; $x < $width; $x++) {
+      $result .= $frame_inner_vertical if ($x > 0);
       my $cell = $table->cell($x, $y);
       $result .= pm_string::right_pad(" $cell ", $column_widths[$x] + 2);
-      $result .= "│";
     }
+    $result .= $frame_right;
   }
   $result .= "\n";
 
-  $result .= "└";
+  $result .= $frame_bottom_left;
   for (my $x = 0; $x < $width; $x++) {
-    $result .= "┴" if ($x > 0);
-    $result .= pm_string::right_pad("", $column_widths[$x] + 2, "─");
+    $result .= $frame_bottom_delimiter if ($x > 0);
+    $result .= pm_string::right_pad("", $column_widths[$x] + 2, $frame_bottom);
   }
-  $result .= "┘\n";
+  $result .= $frame_bottom_right;
+  $result .= "\n";
 
   return $result;
 }
