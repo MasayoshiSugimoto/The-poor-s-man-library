@@ -161,7 +161,7 @@ sub new {
 
 sub url_get {
   my ($self) = @_;
-  my $offset = $self->{page} * $self->{page_size};
+  my $offset = $self->_offset_get();
   my $limit = $self->{page_size};
   return "$self->{url}/?offset=$offset&limit=$limit"
 }
@@ -169,6 +169,8 @@ sub url_get {
 
 sub page_next {
   my ($self) = @_;
+  my $count = $self->count_get();
+  return if ($self->_offset_get() >= $count);
   $self->{page}++;
   return $self;
 }
@@ -176,8 +178,29 @@ sub page_next {
 
 sub page_previous {
   my ($self) = @_;
+  return if ($self->{page} <= 0);
   $self->{page}--;
-  return $self;
+}
+
+
+sub count_get {
+  my ($self) = @_;
+  return 0 if (!defined $self->{last_result});
+  my $result;
+  eval {
+    $result = $self->{last_result}->{count};
+  };
+  if ($@) {
+    my $result = pm_misc::as_text($self->{last_result});
+    pm_assert::assert_fail("Result does not contain count. result=$result");
+  }
+  return $result;
+}
+
+
+sub _offset_get {
+  my ($self) = @_;
+  return $self->{page} * $self->{page_size};
 }
 
 
@@ -186,6 +209,7 @@ sub update {
   main::print_event("Querying pokemon list (page:$self->{page}).");
   my $url = $self->url_get();
   my $result = main::http_get($url);
+  pm_log::info(pm_misc::as_text($result));
   $self->{last_result} = $result;
   my $pokemons = $result->{results};
   my $table = pm_table->new(['Name', 'Type 1', 'Type 2']);
