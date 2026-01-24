@@ -9,7 +9,7 @@ sub call_or_default {
   if ($@) {
     return $default;
   }
-  return $result;
+  return defined $result ? $result : $default;
 }
 
 
