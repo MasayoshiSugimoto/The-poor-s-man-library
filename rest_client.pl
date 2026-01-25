@@ -23,65 +23,6 @@ sub http_get {
 }
 
 
-sub pokemon_table_render {
-  my $result = http_get('https://pokeapi.co/api/v2/pokemon/');
-  my $pokemons = $result->{results};
-  my $table = pm_table->new(['Name', 'Type 1', 'Type 2']);
-  $pokemons->for_each(sub {
-    my ($pokemon_ref) = @_;
-    my $pokemon = http_get($pokemon_ref->{url});
-    $table->push({
-      'Name' => pm_function::call_or_default(sub {$pokemon->{name}}, ""),
-      'Type 1' => pm_function::call_or_default(sub {$pokemon->{types}->get(0)->{type}->{name}}, ""),
-      'Type 2' => pm_function::call_or_def ault(sub {$pokemon->{types}->get(1)->{type}->{name}}, "")
-    });
-  });
-  print pm_md::table_as_markdown($table);
-}
-
-
-sub pokemons_render {
-  my $result = http_get('https://pokeapi.co/api/v2/pokemon/');
-  println();
-  print_event("JSON Output:");
-  print(pm_json::as_pretty_json($result, "  "));
-}
-
-
-sub pokemons_query {
-  if ($STATE->{url} eq 'https://pokeapi.co/api/v2/pokemon/') {
-    print_event("Querying pokemon list (page:1).");
-    my $result = http_get('https://pokeapi.co/api/v2/pokemon/');
-    pm_log::info(pm_misc::as_text($result));
-    my $pokemons = $result->{results};
-    my $table = pm_table->new(['Name', 'Type 1', 'Type 2']);
-    foreach my $pokemon_ref (@$pokemons) {
-      my $pokemon = http_get($pokemon_ref->{url});
-      $table->push({
-        'Name' => pm_function::call_or_default(sub {$pokemon->{name}}, ""),
-        'Type 1' => pm_function::call_or_default(sub {$pokemon->{types}->[0]->{type}->{name}}, ""),
-        'Type 2' => pm_function::call_or_default(sub {$pokemon->{types}->[1]->{type}->{name}}, "")
-      });
-    }
-    my $message = <<EOF;
-
-POKEMON PAGE 1
-==============
-
-EOF
-    print($message);
-    print pm_ui::table_as_ui($table);
-  } else {
-    pm_assert::assert_fail("Unknown url");
-  }
-}
-
-
-sub header_render {
-  print_event("Calling $STATE->{url}");
-}
-
-
 sub prompt_commands_render {
   my ($commands) = @_;
   print_event("Select command:");
@@ -89,16 +30,6 @@ sub prompt_commands_render {
     my $description = $commands->{$key};
     print("$key: ${description}\n");
   }
-}
-
-
-sub instruction_render {
-  my $commands = {
-    A => "Command A",
-    B => "Command B",
-    C => "Command C"
-  };
-  prompt_commands_render($commands);
 }
 
 
@@ -120,13 +51,6 @@ sub print_event {
 # We print a header, then the data, then a message with available options.
 
 sub run {
-  #header_render();
-  #pokemon_table_render();
-  #print("> Querying");
-  #pokemons_query();
-  #println();
-  #println();
-  #instruction_render();
   while (true) {
     $STATE->update();
     main::println();
@@ -140,7 +64,6 @@ sub run {
 # Launching app
 
 run();
-
 
 
 package pk_list_view;
@@ -159,7 +82,7 @@ sub new {
 }
 
 
-sub url_get {
+sub _url_get {
   my ($self) = @_;
   my $offset = $self->_offset_get();
   my $limit = $self->{page_size};
@@ -167,7 +90,7 @@ sub url_get {
 }
 
 
-sub page_next {
+sub _page_next {
   my ($self) = @_;
   my $count = $self->_count_get();
   my $new_offset = ($self->{page} + 1) * $self->{page_size};
@@ -180,7 +103,7 @@ sub page_next {
 }
 
 
-sub page_previous {
+sub _page_previous {
   my ($self) = @_;
   if ($self->{page} <= 0) {
     main::print_event("Already on page 0. Cannot go to previous page.");
@@ -214,7 +137,7 @@ sub _offset_get {
 sub update {
   my ($self) = @_;
   main::print_event("Querying pokemon list (page:$self->{page}).");
-  my $url = $self->url_get();
+  my $url = $self->_url_get();
   my $result = main::http_get($url);
   #pm_log::info(pm_misc::as_text($result));
   $self->{last_result} = $result;
@@ -252,9 +175,9 @@ sub input_handle {
   my ($self, $input_key) = @_;
   chomp $input_key;
   if ($input_key eq "n") {
-    $self->page_next();
+    $self->_page_next();
   } elsif ($input_key eq "p") {
-    $self->page_previous();
+    $self->_page_previous();
   } else {
     main::print_event("Invalid key. ");
   }
