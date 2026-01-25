@@ -169,8 +169,12 @@ sub url_get {
 
 sub page_next {
   my ($self) = @_;
-  my $count = $self->count_get();
-  return if ($self->_offset_get() >= $count);
+  my $count = $self->_count_get();
+  my $new_offset = ($self->{page} + 1) * $self->{page_size};
+  if ($new_offset >= $count) {
+    main::print_event("Already on last page. Cannot go to next page.");
+    return;
+  }
   $self->{page}++;
   return $self;
 }
@@ -178,12 +182,15 @@ sub page_next {
 
 sub page_previous {
   my ($self) = @_;
-  return if ($self->{page} <= 0);
+  if ($self->{page} <= 0) {
+    main::print_event("Already on page 0. Cannot go to previous page.");
+    return;
+  }
   $self->{page}--;
 }
 
 
-sub count_get {
+sub _count_get {
   my ($self) = @_;
   return 0 if (!defined $self->{last_result});
   my $result;
@@ -209,7 +216,7 @@ sub update {
   main::print_event("Querying pokemon list (page:$self->{page}).");
   my $url = $self->url_get();
   my $result = main::http_get($url);
-  pm_log::info(pm_misc::as_text($result));
+  #pm_log::info(pm_misc::as_text($result));
   $self->{last_result} = $result;
   my $pokemons = $result->{results};
   my $table = pm_table->new(['Name', 'Type 1', 'Type 2']);
