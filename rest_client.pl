@@ -164,10 +164,15 @@ EOF
 
 sub command_get {
   my ($self) = @_;
-  return {
+  my $commands = {
     "n" => "Next page",
     "p" => "Previous page"
   };
+  my $pokemons = $self->{last_result}->{results};
+  for (my $i = 0; $i < scalar @$pokemons; $i++) {
+    $commands->{$i} = $pokemons->[$i]->{name};
+  }
+  return $commands;
 }
 
 
@@ -178,7 +183,47 @@ sub input_handle {
     $self->_page_next();
   } elsif ($input_key eq "p") {
     $self->_page_previous();
+  } elsif ($input_key =~ /^\d+$/ && $input_key < scalar @{$self->{last_result}->{results}}) {
+    $STATE = pk_root_view->new($self->{last_result}->{results}->[$input_key]->{url});
   } else {
     main::print_event("Invalid key. ");
   }
 }
+
+
+package pk_root_view;
+
+
+sub new {
+  my ($class, $url) = @_;
+  my $self = {
+    url => $url
+  };
+  bless $self, $class;
+  return $self;
+}
+
+
+sub update {
+  my ($self) = @_;
+  main::print_event("Querying pokemon data.");
+  my $url = $self->{url};
+  my $result = main::http_get($url);
+  pm_log::info(pm_misc::as_text($result));
+}
+
+
+sub command_get {
+  my ($self) = @_;
+  return {
+  };
+}
+
+
+sub input_handle {
+  my ($self, $input_key) = @_;
+  chomp $input_key;
+  main::print_event("Invalid key. ");
+}
+
+
