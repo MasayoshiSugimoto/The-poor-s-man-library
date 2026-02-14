@@ -18,4 +18,21 @@ sub user_edit {
 }
 
 
+sub chrome_open {
+  my ($file_path) = @_;
+  system("'/c/Program Files/Google/Chrome/Application/chrome.exe' '$file_path'");
+}
+
+
+sub edge_open {
+  my ($file_path) = @_;
+  system("'/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe' '$file_path'");
+}
+
+
+sub yank {
+  return `cat /dev/clipboard`;
+}
+
+
 1;

@@ -26,6 +26,8 @@ sub new {
   } else {
     die pm_log::exception("Columns must be arrays or lists.");
   }
+  my $data_ref = ref($data);
+  pm_assert::assert_true($data_ref eq "ARRAY", "\$data must be an array. Found $data_ref");
   my $self = {
     columns => $columns,
     data => $data

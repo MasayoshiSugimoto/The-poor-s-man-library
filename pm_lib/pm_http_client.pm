@@ -1,6 +1,10 @@
 package pm_http_client;
 use strict;
 use warnings;
+use constant {
+  true => 1,
+  false => 0
+};
 
 
 our $METHOD_GET = 'GET';
@@ -20,10 +24,13 @@ sub new {
   my $self = {
     url => $url,
     headers => {},
+    query_parameters => {},
     method => 'GET',
     content => undef,
+    content_schema => undef,
     content_type => $CONTENT_TYPE_JSON,
-    binary_content => {}
+    binary_content => {},
+    output_file => undef
   };
   bless $self, $class;
   return $self;
@@ -51,9 +58,30 @@ sub method_set {
 }
 
 
+sub query_parameter_add {
+  my ($self, $key, $value) = @_;
+  pm_assert::assert_defined($key);
+  return if (!defined $value);
+  return if (pm_string::is_empty($value));
+  $self->{query_parameters}->{$key} = $value;
+  return $self;
+}
+
+
+sub query_parameters_add {
+  my ($self, $query_object) = @_;
+  foreach my $key (keys %$query_object) {
+    my $value = $query_object->{$key};
+    $self->query_parameter_add($key, $value);
+  }
+  return $self;
+}
+
+
 sub content_set {
-  my ($self, $content) = @_;
+  my ($self, $content, $content_schema) = @_;
   $self->{content} = $content;
+  $self->{content_schema} = $content_schema;
   return $self;
 }
 
@@ -70,6 +98,13 @@ sub binary_content_add {
   my ($self, $field_name, $value) = @_;
   $self->{binary_content}->{$field_name} = "$value";
   $self->{content_type} = $CONTENT_TYPE_DEFAULT;
+  return $self;
+}
+
+
+sub output_file_set {
+  my ($self, $output_file) = @_;
+  $self->{output_file} = $output_file;
   return $self;
 }
 
@@ -102,13 +137,35 @@ sub as_command {
     $binary_blocks->push("-F '$field=$value'");
   }
   my $binary_content_as_string = $binary_blocks->join("\\\n  ");
+  my $url = $self->{url};
+  my $redirection = pm_log::cmd_redirection();
+  {
+    my $first = true;
+    foreach my $key (keys %{$self->{query_parameters}}) {
+      if ($first) {
+        $url .= "?";
+        $first = false;
+      } else {
+        $url .= "&";
+      }
+      my $value = $self->{query_parameters}->{$key};
+      $url .= "$key=$value";
+    }
+  }
+  my $output_file_params = "";
+  if (defined $self->{output_file}) {
+    $output_file_params = "-o $self->{output_file}";
+  }
   return <<EOF;
-curl \\
+curl '$url' \\
+  -v \\
   -s \\
-  -X $self->{method} '$self->{url}' \\
-  ${headers} \\
+  -X $self->{method} \\
+  $headers \\
   $content \\
-  $binary_content_as_string
+  $output_file_params \\
+  $binary_content_as_string \\
+  $redirection
 EOF
 }
 

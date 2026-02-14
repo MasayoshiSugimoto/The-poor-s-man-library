@@ -90,4 +90,10 @@ sub as_linux_string {
 }
 
 
+sub is_string {
+  my ($var) = @_;
+  return defined $var && !ref($var);
+}
+
+
 1;

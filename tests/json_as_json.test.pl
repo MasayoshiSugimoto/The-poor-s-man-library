@@ -2,6 +2,10 @@ use strict;
 use warnings;
 use lib 'pm_lib';
 use pm_include_test;
+use constant {
+  true => 1,
+  false => 0
+};
 
 
 # Test conversion to json.
@@ -38,4 +42,24 @@ pm_test_util::assert_equals(
   '{"a":"x","b":1,"c":{"z":2}}', 
   pm_json::as_json({a=>"x", b=>1, c=>{z=>2}}),
   "Nested hash"
+);
+pm_test_util::assert_equals(
+  '{"o":{"a":"000"}}',
+  pm_json::as_json({o => {a => "000"}}, {o => {a => "string"}}),
+  "Schema with string"
+);
+pm_test_util::assert_equals(
+  '{"o":{"a":0}}',
+  pm_json::as_json({o => {a => "000"}}, {o => {a => "number"}}),
+  "Schema with number"
+);
+pm_test_util::assert_equals(
+  '{"o":{"a":true}}',
+  pm_json::as_json({o => {a => true}}, {o => {a => "boolean"}}),
+  "Schema with true"
+);
+pm_test_util::assert_equals(
+  '{"o":{"a":false}}',
+  pm_json::as_json({o => {a => false}}, {o => {a => "boolean"}}),
+  "Schema with false"
 );

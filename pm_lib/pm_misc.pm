@@ -69,7 +69,6 @@ sub as_text {
   $indent = "" if (!defined $indent);
   return "undef" if (!defined $x);
   my $refX = ref($x);
-  pm_log::debug("ref(\$x)=$refX");
   if ($refX eq 'ARRAY') {
     my $result = "[\n";
     my $first = true;

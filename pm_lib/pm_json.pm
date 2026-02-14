@@ -1,6 +1,6 @@
 package pm_json;
 use strict;
-use warnings;
+use warnings FATAL => 'uninitialized';
 use Scalar::Util qw(looks_like_number);
 use constant {
   true => 1,
@@ -9,105 +9,70 @@ use constant {
 
 
 sub as_json {
-  my ($x) = @_;
-  if (!defined $x) {
-    return "null";
-  }
-  my $result = "";
-  my $type = ref($x);
-  if ($type eq "HASH") {
-    $result .= "{";
-    my $first = true;
-    foreach my $key (sort keys %$x) {
-      my $v = as_json($x->{$key});
-      if ($first) {
-        $result .= "\"$key\":$v";
-        $first = false;
-      } else {
-        $result .= ",\"$key\":$v";
-      }
-    }
-    $result .= "}";
-  } elsif ($type eq "ARRAY") {
-    $result .= "[";
-    my $first = true;
-    foreach my $value (@$x) {
-      my $v = as_json($value);
-      if ($first) {
-        $result .= "$v";
-        $first = false;
-      } else {
-        $result .= ",$v";
-      }
-    }
-    $result .= "]";
-  } elsif ($type eq "SCALAR" && looks_like_number($x) && $x =~ /^0\d.*/) {  # Prevent number with leading zero to be interpreted as numbers.
-    $result = "\"$x\"";
-  } elsif ($type eq "SCALAR" && looks_like_number($x)) {  # Need something else for "1.0"
-    $result = "$x";
-  } elsif ($type eq "SCALAR") {
-    $result = "\"$x\"";
-  } elsif (!$type && looks_like_number($x) && $x =~ /^0\d.*/) {  # Prevent number with leading zero to be interpreted as numbers.
-    $result = "\"$x\"";
-  } elsif (!$type && looks_like_number($x)) {
-    $result = "$x";
-  } elsif (!$type) {
-    $result = "\"$x\"";
-  } else {
-    die pm_log::exception("Type $type not supported");
-  }
-  return $result;
+  my ($x, $schema) = @_;
+  return as_pretty_json($x, $schema, "", "", "");
 }
 
 
 sub as_pretty_json {
-  my ($x, $indent_increment, $indent) = @_;
-  if (!defined $x) {
-    return "null";
-  }
+  my ($x, $schema, $indent_increment, $indent, $new_line) = @_;
+  return "null" if (!defined $x);
   $indent_increment = "  " if (!defined $indent_increment);
   $indent = "" if (!defined $indent);
+  $new_line = "\n" if (!defined $new_line);
   my $space = "";
   $space = " " if (length($indent_increment) > 0);
   my $result = "";
   my $type = ref($x);
   if ($type eq "HASH") {
     my $indent2 = $indent . $indent_increment;
-    $result .= "\{\n";
+    $result .= "\{$new_line";
     my $first = true;
     foreach my $key (sort keys %$x) {
-      my $v = as_pretty_json($x->{$key}, $indent_increment, $indent2);
+      my $v = as_pretty_json($x->{$key}, $schema && $schema->{$key}, $indent_increment, $indent2, $new_line);
       if ($first) {
         $result .= "$indent2\"$key\":$space$v";
         $first = false;
       } else {
-        $result .= ",\n$indent2\"$key\":$space$v";
+        $result .= ",$new_line$indent2\"$key\":$space$v";
       }
     }
-    $result .= "\n$indent}";
+    $result .= "$new_line$indent}";
   } elsif ($type eq "ARRAY") {
     my $indent2 = $indent . $indent_increment;
-    $result .= "$indent\[\n";
+    $result .= "$indent\[$new_line";
     my $first = true;
     foreach my $value (@$x) {
-      my $v = as_pretty_json($value, $indent_increment, $indent2);
+      my $v = as_pretty_json($value, $schema && $schema->[0], $indent_increment, $indent2, $new_line);
       if ($first) {
         $result .= "$indent2$v";
         $first = false;
       } else {
-        $result .= ",\n$indent2$v";
+        $result .= ",$new_line$indent2$v";
       }
     }
-    $result .= "\n$indent]";
-  } elsif ($type eq "SCALAR" && looks_like_number($x) && $x =~ /^0\d.*/) {  # Prevent number with leading zero to be interpreted as numbers.
+    $result .= "$new_line$indent]";
+  } elsif ($type eq "SCALAR" && defined $schema && $schema eq "string") {
     $result = "\"$x\"";
-  } elsif ($type eq "SCALAR" && looks_like_number($x)) {  # Need something else for "1.0"
+  } elsif ($type eq "SCALAR" && defined $schema && $schema eq "number") {
+    $x = 0 + $x;
+    $result = "$x";
+  } elsif ($type eq "SCALAR" && defined $schema && $schema eq "boolean") {
+    $result = $x ? "true" : "false";
+  } elsif (!$type && defined $schema && $schema eq "string") {
+    $result = "\"$x\"";
+  } elsif (!$type && defined $schema && $schema eq "number") {
+    $x = 0 + $x;
+    $result = "$x";
+  } elsif (!$type && defined $schema && $schema eq "boolean") {
+    $result = $x ? "true" : "false";
+  } elsif ($type eq "SCALAR" && looks_like_number($x)) {  # Maybe replace by assert?
+    $x = 0 + $x;
     $result = "$x";
   } elsif ($type eq "SCALAR") {
     $result = "\"$x\"";
-  } elsif (!$type && looks_like_number($x) && $x =~ /^0\d.*/) {  # Prevent number with leading zero to be interpreted as numbers.
-    $result = "\"$x\"";
   } elsif (!$type && looks_like_number($x)) {
+    $x = 0 + $x;
     $result = "$x";
   } elsif (!$type) {
     $result = "\"$x\"";

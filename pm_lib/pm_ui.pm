@@ -48,6 +48,7 @@ sub table_as_ui {
   for (my $y = 0; $y < $height; $y++) {
     for (my $x = 0; $x < $width; $x++) {
       my $cell = $table->cell($x, $y);
+      $cell = "" if (!defined $cell);
       if (length($cell) > $column_widths[$x]) {
         $column_widths[$x] = length($cell);
       }
@@ -68,6 +69,7 @@ sub table_as_ui {
     for (my $x = 0; $x < $width; $x++) {
       $result .= $frame_inner_vertical if ($x > 0);
       my $field = $columns->get($x);
+      $field = "" if (!defined $field);
       $result .= pm_string::right_pad(" $field ", $column_widths[$x] + 2);
     }
     $result .= $frame_right;
@@ -87,6 +89,7 @@ sub table_as_ui {
     for (my $x = 0; $x < $width; $x++) {
       $result .= $frame_inner_vertical if ($x > 0);
       my $cell = $table->cell($x, $y);
+      $cell = "" if (!defined $cell);
       $result .= pm_string::right_pad(" $cell ", $column_widths[$x] + 2);
     }
     $result .= $frame_right;
@@ -102,6 +105,31 @@ sub table_as_ui {
   $result .= "\n";
 
   return $result;
+}
+
+
+sub event_print {
+  my ($text) = @_;
+  print("⚪ $text\n");
+}
+
+
+sub event_success_print {
+  my ($text) = @_;
+  print("🟢 $text\n");
+}
+
+
+sub event_failure_print {
+  my ($text) = @_;
+  print("⛔ $text\n");
+  exit(1);
+}
+
+
+sub event_verbatim_print {
+  my ($text) = @_;
+  print("$text\n");
 }
 
 

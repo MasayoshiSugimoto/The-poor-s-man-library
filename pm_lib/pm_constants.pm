@@ -16,4 +16,8 @@ our $CONSOLE_SIZE_DEBUG = undef;
 #our $CONSOLE_SIZE_DEBUG = {x => 10, y => 5};
 
 
+our $LOG_FILE = undef;
+#our $LOG_FILE = "/tmp/pm.log";
+
+
 1;
