@@ -93,6 +93,31 @@ sub positional_argument_size {
 }
 
 
+sub cli_command_mapping_set {
+  my ($cli_argument_mapping) = @_;
+  my $index = 0;
+  my $current_step = $cli_argument_mapping;
+  while ($index < positional_argument_size()) {
+    my $argument = positional_argument_get($index++);
+    pm_log::debug("argument=$argument");
+    my $default_handler = $current_step->{$argument};
+    my $tmp = ref($current_step);
+    if (defined $current_step && ref($current_step) ne "HASH") {
+      $current_step->($index);
+      return {error => false};
+    } elsif (!defined $current_step && ref($default_handler) eq "CODE") {
+      $default_handler->();
+      return {error => false};
+    } elsif (!defined $current_step && pm_string::is_string($default_handler)) {
+      return {error => true, message => $default_handler};
+    } elsif (!defined $current_step) {
+      return {error => true, message => "Invalid command line argument: $argument"};
+    }
+  }
+  return {error => true, message => "No handler matching."};
+}
+
+
 sub clear {
   pm_log::info("Clearing command line arguments");
   @_positional_arguments = ();
