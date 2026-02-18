@@ -209,7 +209,13 @@ sub update {
   main::print_event("Querying pokemon data.");
   my $url = $self->{url};
   my $result = main::http_get($url);
-  pm_log::info(pm_misc::as_text($result));
+  $result = pm_misc::as_text($result);
+  my ($handle, $file) = pm_file::file_temp();
+  pm_log::debug("file=$file");
+  pm_assert::assert_defined($file);
+  pm_file::file_save_string($file, $result);
+  pm_os::less_open($file);
+  pm_file::file_delete($file);
 }
 
 

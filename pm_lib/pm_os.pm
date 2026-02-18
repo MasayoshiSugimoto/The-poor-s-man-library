@@ -30,6 +30,12 @@ sub edge_open {
 }
 
 
+sub less_open {
+  my ($file) = @_;
+  system("bat '$file'");
+}
+
+
 sub yank {
   return `cat /dev/clipboard`;
 }
