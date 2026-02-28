@@ -19,5 +19,7 @@ our $CONSOLE_SIZE_DEBUG = undef;
 our $LOG_FILE = undef;
 #our $LOG_FILE = "/tmp/pm.log";
 
+our $COLOR_SELECTION = pm_ansi::BG_WHITE;
+
 
 1;

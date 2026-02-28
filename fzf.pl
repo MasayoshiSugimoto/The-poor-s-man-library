@@ -80,4 +80,5 @@ print(ALT_SCREEN_OFF);
 
 my @files = split(/\n/, `find`);
 my $selection = pm_fuzzy_selection::fuzzy_selection(\@files);
-pm_log::info("selection=$selection");
+print($selection);
+print("\n");

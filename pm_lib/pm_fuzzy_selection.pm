@@ -17,12 +17,20 @@ use pm_keyboard qw(
 
 
 my $_selection_index = 0;
+my $_offset = 0;
 
 
 sub fuzzy_selection($) {
   my ($list) = @_;
+  eval { _fuzzy_selection($list); };
+}
+
+
+sub _fuzzy_selection($) {
+  my ($list) = @_;
   print(pm_ansi::ALT_SCREEN);
   $_selection_index = 0;
+  $_offset = 0;
   my $pattern = "";
   my $result = "";
   while (true) {
@@ -32,10 +40,19 @@ sub fuzzy_selection($) {
     my $size = pm_console::size_get();
     my $fuzzy_pattern = join(".*", split(//, $pattern));
     my @filtered = grep { /$fuzzy_pattern/ } @$list;
-    for (my $i = 0; $i < scalar @filtered && $i < $size->{y} - 1; $i++) {
-      my $file = $filtered[$i];
+    my $filtered_count = scalar @filtered;
+    my $height = $size->{y} - 1;
+    if ($_selection_index < $_offset) {
+      $_offset = $_selection_index;
+    }
+    if ($_selection_index >= $_offset + $height) {
+      $_offset = $_selection_index - $height + 1;
+    }
+    for (my $i = 0; $i + $_offset < $filtered_count && $i < $height; $i++) {
+      my $x = $_offset + $i;
+      my $file = $filtered[$x];
       next if (!defined $file);
-      my $color = $_selection_index == $i ? BG_WHITE : "";
+      my $color = $_selection_index == $x ? $pm_constants::COLOR_SELECTION : "";
       my $reset = RESET;
       print("\n$color$file$reset");
     }
@@ -52,12 +69,14 @@ sub fuzzy_selection($) {
       # Do nothing
     } elsif ($key eq KEYBOARD_BACKSPACE) {
       $_selection_index = 0;
+      $_offset = 0;
       chop($pattern);
     } elsif ($key eq KEYBOARD_ENTER) {
       $result = $filtered[$_selection_index];
       last;
     } else {
       $_selection_index = 0;
+      $_offset = 0;
       $pattern .= $key;
     }
     system("stty -raw echo");

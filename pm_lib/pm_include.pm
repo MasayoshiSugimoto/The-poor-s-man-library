@@ -10,6 +10,7 @@ use constant {
   true => 1,
   false => 0
 };
+use pm_ansi;
 use pm_db;
 use pm_db_table;
 use pm_db_util;
@@ -33,10 +34,10 @@ use pm_ui;
 use pm_hash;
 use pm_os;
 use pm_function;
-use pm_ansi;
 use pm_keyboard;
 use pm_fuzzy_selection;
 use pm_bool;
+use pm_math;
 
 
 1;
