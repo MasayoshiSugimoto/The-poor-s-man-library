@@ -35,5 +35,8 @@ use pm_os;
 use pm_function;
 use pm_ansi;
 use pm_keyboard;
+use pm_fuzzy_selection;
+use pm_bool;
+
 
 1;

@@ -20,7 +20,6 @@ use pm_keyboard qw(
 );
 
 
-my $KEY_ID_ESCAPE = 27;
 my $selection_index = 0;
 
 
@@ -38,7 +37,7 @@ sub selection_previous($) {
   $selection_index = $last if ($selection_index < 0);
 }
 
-
+sub deprecated {
 my @files = split(/\n/, `find`);
 print(ALT_SCREEN);
 my $pattern = "";
@@ -77,3 +76,8 @@ while (true) {
   select(undef, undef, undef, 0.1);
 }
 print(ALT_SCREEN_OFF);
+}
+
+my @files = split(/\n/, `find`);
+my $selection = pm_fuzzy_selection::fuzzy_selection(\@files);
+pm_log::info("selection=$selection");
