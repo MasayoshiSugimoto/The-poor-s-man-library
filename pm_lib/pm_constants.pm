@@ -20,6 +20,6 @@ our $LOG_FILE = undef;
 #our $LOG_FILE = "/tmp/pm.log";
 
 our $COLOR_SELECTION = pm_ansi::BG_WHITE;
-
+our $COLOR_MATCH = pm_ansi::FG_RED;
 
 1;

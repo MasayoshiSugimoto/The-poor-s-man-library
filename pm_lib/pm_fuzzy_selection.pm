@@ -3,7 +3,7 @@ package pm_fuzzy_selection;
 use strict;
 use warnings;
 use pm_bool qw(true false);
-use pm_ansi qw(ALT_SCREEN ALT_SCREEN_OFF BG_WHITE RESET SAVE_CURSOR RESTORE_CURSOR);
+use pm_ansi qw(ALT_SCREEN ALT_SCREEN_OFF BG_WHITE RESET SAVE_CURSOR RESTORE_CURSOR FG_DEFAULT);
 use pm_keyboard qw(
   KEYBOARD_UP
   KEYBOARD_RIGHT
@@ -38,8 +38,8 @@ sub _fuzzy_selection($) {
     print("> $pattern");
     print(SAVE_CURSOR);
     my $size = pm_console::size_get();
-    my $fuzzy_pattern = join(".*", split(//, $pattern));
-    my @filtered = grep { /$fuzzy_pattern/ } @$list;
+    my $fuzzy_pattern = join("(.*)", split(//, $pattern));
+    my @filtered = grep { /$fuzzy_pattern/i } @$list;
     my $filtered_count = scalar @filtered;
     my $height = $size->{y} - 1;
     if ($_selection_index < $_offset) {
@@ -50,7 +50,7 @@ sub _fuzzy_selection($) {
     }
     for (my $i = 0; $i + $_offset < $filtered_count && $i < $height; $i++) {
       my $x = $_offset + $i;
-      my $file = $filtered[$x];
+      my $file = _colorize($filtered[$x], $pattern);
       next if (!defined $file);
       my $color = $_selection_index == $x ? $pm_constants::COLOR_SELECTION : "";
       my $reset = RESET;
@@ -101,6 +101,31 @@ sub _selection_previous($) {
   my $last = (scalar @$list) - 1;
   $last = 0 if ($last < 0);
   $_selection_index = $last if ($_selection_index < 0);
+}
+
+
+sub _as_fuzzy_pattern($) {
+  my ($pattern) = @_;
+  return join(".*", split(//, $pattern));
+}
+
+
+sub _colorize($$) {
+  my ($string, $pattern) = @_;
+  my @p = split(//, $pattern);
+  my @s = split(//, $string);
+  my $result = "";
+  my $index = 0;
+  my $reset = FG_DEFAULT;
+  foreach my $char (@s) {
+    if ($index < scalar @p && lc($char) eq lc($p[$index])) {
+      $index++;
+      $result .= "$pm_constants::COLOR_MATCH$char$reset";
+    } else {
+      $result .= $char
+    }
+  }
+  return $result;
 }
 
 
