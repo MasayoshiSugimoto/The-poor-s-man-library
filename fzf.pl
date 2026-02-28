@@ -15,6 +15,7 @@ use pm_keyboard qw(
   KEYBOARD_DOWN
   KEYBOARD_LEFT
   KEYBOARD_ESC
+  KEYBOARD_BACKSPACE
   keyboard_consume_single
 );
 
@@ -66,6 +67,8 @@ while (true) {
     selection_next(\@filtered);
   } elsif ($key eq KEYBOARD_LEFT) {
     # Do nothing
+  } elsif ($key eq KEYBOARD_BACKSPACE) {
+    chop($pattern);
   } else {
     $pattern .= $key;
   }
