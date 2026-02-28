@@ -8,28 +8,38 @@ use constant {
   true => 1,
   false => 0
 };
+use pm_ansi qw(ALT_SCREEN ALT_SCREEN_OFF BG_WHITE RESET);
+use pm_keyboard qw(
+  KEYBOARD_UP
+  KEYBOARD_RIGHT
+  KEYBOARD_DOWN
+  KEYBOARD_LEFT
+  KEYBOARD_ESC
+  keyboard_consume_single
+);
 
 
-my $ALTERNATE_SCREEN_OPEN = "\e[?1049h";
-my $ALTERNATE_SCREEN_CLOSE = "\e[?1049l";
 my $KEY_ID_ESCAPE = 27;
+my $selection_index = 0;
 
 
-sub key_consume {
-  my $key = "";
-  sysread(STDIN, $key, 1);
-  if ($key eq '') {
+sub selection_next($) {
+  my ($list) = @_;
+  $selection_index = ($selection_index + 1) % (scalar @$list);
+}
 
-  } elsif ($key eq '') {
 
-  } else {
-    return $key;
-  }
+sub selection_previous($) {
+  my ($list) = @_;
+  $selection_index--;
+  my $last = (scalar @$list) - 1;
+  $last = 0 if ($last < 0);
+  $selection_index = $last if ($selection_index < 0);
 }
 
 
 my @files = split(/\n/, `find`);
-print($ALTERNATE_SCREEN_OPEN);
+print(ALT_SCREEN);
 my $pattern = "";
 while (true) {
   system("clear");
@@ -40,13 +50,25 @@ while (true) {
   for (my $i = 0; $i < scalar @filtered && $i < $size->{y} - 1; $i++) {
     my $file = $filtered[$i];
     next if (!defined $file);
-    print("\n$file");
+    my $color = $selection_index == $i ? BG_WHITE : "";
+    my $reset = RESET;
+    print("\n$color$file$reset");
   }
   system("stty raw -echo");
-  my $key = "";
-  sysread(STDIN, $key, 1);
-  $pattern .= $key;
+  my $key = keyboard_consume_single();
+  if ($key eq KEYBOARD_UP) {
+    selection_previous(\@filtered);
+  } elsif ($key eq KEYBOARD_RIGHT) {
+    # Do nothing
+  } elsif ($key eq KEYBOARD_DOWN) {
+    selection_next(\@filtered);
+  } elsif ($key eq KEYBOARD_LEFT) {
+    # Do nothing
+  } else {
+    $pattern .= $key;
+  }
   system("stty -raw echo");
-  last if (ord($key) == $KEY_ID_ESCAPE);
+  last if ($key eq KEYBOARD_ESC);
+  select(undef, undef, undef, 0.1);
 }
-print($ALTERNATE_SCREEN_CLOSE);
+print(ALT_SCREEN_OFF);

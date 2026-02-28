@@ -33,6 +33,7 @@ use pm_ui;
 use pm_hash;
 use pm_os;
 use pm_function;
-
+use pm_ansi;
+use pm_keyboard;
 
 1;
