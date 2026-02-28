@@ -8,7 +8,7 @@ use constant {
   true => 1,
   false => 0
 };
-use pm_ansi qw(ALT_SCREEN ALT_SCREEN_OFF BG_WHITE RESET);
+use pm_ansi qw(ALT_SCREEN ALT_SCREEN_OFF BG_WHITE RESET SAVE_CURSOR RESTORE_CURSOR);
 use pm_keyboard qw(
   KEYBOARD_UP
   KEYBOARD_RIGHT
@@ -44,6 +44,7 @@ my $pattern = "";
 while (true) {
   system("clear");
   print("> $pattern");
+  print(SAVE_CURSOR);
   my $size = pm_console::size_get();
   my $fuzzy_pattern = join(".*", split(//, $pattern));
   my @filtered = grep { /$fuzzy_pattern/ } @files;
@@ -54,6 +55,7 @@ while (true) {
     my $reset = RESET;
     print("\n$color$file$reset");
   }
+  print(RESTORE_CURSOR);
   system("stty raw -echo");
   my $key = keyboard_consume_single();
   if ($key eq KEYBOARD_UP) {
