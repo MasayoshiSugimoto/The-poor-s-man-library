@@ -1,9 +1,10 @@
 package pm_fuzzy_selection;
 
+
 use strict;
 use warnings;
 use pm_bool qw(true false);
-use pm_ansi qw(ALT_SCREEN ALT_SCREEN_OFF BG_WHITE RESET SAVE_CURSOR RESTORE_CURSOR FG_DEFAULT);
+use pm_ansi qw(ALT_SCREEN ALT_SCREEN_OFF BG_WHITE RESET SAVE_CURSOR RESTORE_CURSOR FG_DEFAULT CLEAR_SCREEN);
 use pm_keyboard qw(
   KEYBOARD_UP
   KEYBOARD_RIGHT
@@ -28,15 +29,16 @@ sub fuzzy_selection($) {
 
 sub _fuzzy_selection($) {
   my ($list) = @_;
-  print(pm_ansi::ALT_SCREEN);
+  _print(pm_ansi::ALT_SCREEN);
   $_selection_index = 0;
   $_offset = 0;
   my $pattern = "";
   my $result = "";
   while (true) {
-    system("clear");
-    print("> $pattern");
-    print(SAVE_CURSOR);
+    _print(pm_ansi::HIDE_CURSOR);
+    _print(pm_ansi::CLEAR_SCREEN);
+    _print(pm_ansi::cursor_position_set(0, 0));
+    _print("> $pattern");
     my $size = pm_console::size_get();
     my $fuzzy_pattern = join("(.*)", split(//, $pattern));
     my @filtered = grep { /$fuzzy_pattern/i } @$list;
@@ -54,9 +56,10 @@ sub _fuzzy_selection($) {
       next if (!defined $file);
       my $color = $_selection_index == $x ? $pm_constants::COLOR_SELECTION : "";
       my $reset = RESET;
-      print("\n$color$file$reset");
+      _print("\n$color$file$reset");
     }
-    print(RESTORE_CURSOR);
+    _print(pm_ansi::SHOW_CURSOR);
+    _print(pm_ansi::cursor_position_set(3 + length($pattern), 0));
     system("stty raw -echo");
     my $key = keyboard_consume_single();
     if ($key eq KEYBOARD_UP) {
@@ -83,7 +86,7 @@ sub _fuzzy_selection($) {
     last if ($key eq KEYBOARD_ESC);
     select(undef, undef, undef, 0.1);
   }
-  print(pm_ansi::ALT_SCREEN_OFF);
+  _print(pm_ansi::ALT_SCREEN_OFF);
   system("stty -raw echo");
   return $result;
 }
@@ -126,6 +129,12 @@ sub _colorize($$) {
     }
   }
   return $result;
+}
+
+
+sub _print {
+  my ($text) = @_;
+  print STDERR $text;
 }
 
 

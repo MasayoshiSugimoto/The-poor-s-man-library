@@ -37,46 +37,6 @@ sub selection_previous($) {
   $selection_index = $last if ($selection_index < 0);
 }
 
-sub deprecated {
-my @files = split(/\n/, `find`);
-print(ALT_SCREEN);
-my $pattern = "";
-while (true) {
-  system("clear");
-  print("> $pattern");
-  print(SAVE_CURSOR);
-  my $size = pm_console::size_get();
-  my $fuzzy_pattern = join(".*", split(//, $pattern));
-  my @filtered = grep { /$fuzzy_pattern/ } @files;
-  for (my $i = 0; $i < scalar @filtered && $i < $size->{y} - 1; $i++) {
-    my $file = $filtered[$i];
-    next if (!defined $file);
-    my $color = $selection_index == $i ? BG_WHITE : "";
-    my $reset = RESET;
-    print("\n$color$file$reset");
-  }
-  print(RESTORE_CURSOR);
-  system("stty raw -echo");
-  my $key = keyboard_consume_single();
-  if ($key eq KEYBOARD_UP) {
-    selection_previous(\@filtered);
-  } elsif ($key eq KEYBOARD_RIGHT) {
-    # Do nothing
-  } elsif ($key eq KEYBOARD_DOWN) {
-    selection_next(\@filtered);
-  } elsif ($key eq KEYBOARD_LEFT) {
-    # Do nothing
-  } elsif ($key eq KEYBOARD_BACKSPACE) {
-    chop($pattern);
-  } else {
-    $pattern .= $key;
-  }
-  system("stty -raw echo");
-  last if ($key eq KEYBOARD_ESC);
-  select(undef, undef, undef, 0.1);
-}
-print(ALT_SCREEN_OFF);
-}
 
 my @files = split(/\n/, `find`);
 my $selection = pm_fuzzy_selection::fuzzy_selection(\@files);

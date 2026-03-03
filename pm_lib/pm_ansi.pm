@@ -120,4 +120,11 @@ use constant BG_BRIGHT_MAGENTA => "\x1B[105m";
 use constant BG_BRIGHT_CYAN    => "\x1B[106m";
 use constant BG_BRIGHT_WHITE   => "\x1B[107m";
 
+
+sub cursor_position_set($$) {
+  my ($x, $y) = @_;
+  my $ESC = ESC;
+  return "${ESC}[${y};${x}H";
+}
+
 1;
